@@ -1,0 +1,15 @@
+{
+	"name": "triggers",
+	"description": "Triggering REST server as defined by http://docs.triggers.apiary.io/",
+	"dependencies": {
+		"validator": "*",
+		"restify": "*",
+		"async": "*",
+		"mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git"
+	},
+	"scripts": {
+		"start": "node ./lib/app",
+		"start-dev": "node-dev ./lib/app"
+	},
+	"main": "./lib/app"
+}
