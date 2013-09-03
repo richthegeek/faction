@@ -22,10 +22,14 @@ server.on 'uncaughtException', (req, res, route, err) ->
 # parse the query string and JSON-body automatically
 server.use restify.queryParser()
 server.use (req, res, next) -> next null, req.headers['content-type'] = 'application/json'
-server.use restify.bodyParser()
+server.use restify.bodyParser mapParams: false
 
 # handle authorised routes.
 server.use (req, res, next) ->
+
+	req.throw = (err) ->
+		server.emit 'uncaughtException', req, res, req.route, err
+
 	if req.route.auth is false
 		return next()
 
@@ -64,6 +68,8 @@ server.use (req, res, next) ->
 						if hash is req.query.hash
 							req.key = key
 							req.account = @
+							delete req.params.key
+							delete req.params.hash
 							return next()
 
 						throw "Request signature did not match. (path = #{hash_parts[0]}, body = #{hash_parts[1]}"

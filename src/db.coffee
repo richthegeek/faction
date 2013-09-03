@@ -21,7 +21,9 @@ mongodb.open = (name, collection, callback) ->
 	server = new mongodb.Server config.db.host, config.db.port
 	db = mongodb.Db name, server, options
 	db.open (err, db) ->
-		if not collection
+		if err
+			callback err, db, null
+		else if not collection
 			mongodb.open_cache name, null, db
 			callback null, db, null
 		else
@@ -40,7 +42,10 @@ mongodb.open_cache = (name, collection, set) ->
 			@cache[name].collections[collection] = set
 
 	else if cache = @cache[name]
-		collection = cache.collections[collection]
-		return {database: cache.db, collection: collection}
+		if collection
+			if coll = cache.collections[collection]
+				return {database: cache.db, collection: coll}
+		else
+			return {database: cache.db, collection: null}
 
 module.exports = mongodb

@@ -7,6 +7,9 @@ module.exports = class Account extends Model
 	constructor: (callback) ->
 		super 'core', 'accounts', callback
 
+	_spawn: (callback) ->
+		new @constructor callback
+
 	dbname: () ->
 		return 'account_' + @data._id
 

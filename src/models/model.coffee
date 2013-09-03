@@ -1,25 +1,41 @@
 check = require('validator').check
+
 module.exports = class Model
 
 	constructor: (db, collection, callback) ->
-		mongodb.open db, collection, (err, db, table) =>
-			@db = db
-			@table = table
+		mongodb.open db, collection, (err, @db, @table) =>
 			if callback
 				callback.call @, @, db, table
 
+	_spawn: (callback) ->
+		new @constructor @db, @table, callback
 
-	export: () ->
-		return @data
+	import: (data, callback) ->
+		@data = @data or {}
+		for k,v of data or {}
+			@data[k] = v
+		callback.call @, @data
+
+	export: () -> @data
+	toJSON: () -> @export()
 
 	load: (conditions, callback) ->
 		if (conditions instanceof mongodb.ObjectID) or (typeof conditions in ['string', 'number'])
 			conditions = {_id: conditions}
 
 		@table.findOne conditions, (err, row) =>
-			if row
-				@data = row
-			callback.call @, err, row
+			@import row, () =>
+				callback.call @, err, row, conditions
+
+	paramsToQuery: (params) ->
+		query = {}
+		for name, value of params
+			name = name.replace /-/g, '_'
+			query[name] = value
+		return query
+
+	loadParams: (params, callback) ->
+		@load @paramsToQuery(params), callback
 
 	loadPaginated: (conditions, req, callback) ->
 		# get numerical params from the req.
@@ -38,30 +54,42 @@ module.exports = class Model
 
 		skip = req.query.page * req.query.limit
 
-		@table.find conditions, (err, cursor) ->
+		@table.find conditions, (err, cursor) =>
 			if err then return callback err
-			cursor.count (err, size) ->
-				cursor.skip(skip).limit(req.query.limit).toArray (err, items) ->
-					response =
-						page: req.query.page,
-						limit: req.query.limit,
-						totalItems: size,
-						totalPages: Math.ceil(size / req.query.limit),
-						nextPage: null,
-						prevPage: null
-						items: items
+			cursor.count (err, size) =>
+				cursor.skip(skip).limit(req.query.limit).toArray (err, items) =>
 
-					if req.query.page + 1 < response.totalPages
-						response.nextPage = req.path + "?page=#{req.query.page + 1}&limit=#{req.query.limit}"
+					new Grouped_Model @, items, () ->
 
-					if req.query.page > 0
-						response.prevPage = req.path + "?page=#{req.query.page - 1}&limit=#{req.query.limit}"
+						response =
+							page: req.query.page,
+							limit: req.query.limit,
+							totalItems: size,
+							totalPages: Math.ceil(size / req.query.limit),
+							nextPage: null,
+							prevPage: null
+							items: @
 
-					callback err, response
+						if req.query.page + 1 < response.totalPages
+							response.nextPage = req.path + "?page=#{req.query.page + 1}&limit=#{req.query.limit}"
 
+						if req.query.page > 0
+							response.prevPage = req.path + "?page=#{req.query.page - 1}&limit=#{req.query.limit}"
+
+						callback.call @, err, response
+
+	validate: (data) ->
+		null
 
 	save: (callback) ->
-		@table.save @data, callback
+		try
+			@validate @export()
+		catch e
+			return callback e
+
+		@table.save @data, (err) =>
+			if err then throw err
+			callback.apply @, arguments
 
 	remove: (conditions, callback) ->
 		if typeof conditions is 'function'
@@ -69,7 +97,23 @@ module.exports = class Model
 			conditions = {}
 			conditions._id = @export()._id
 
-			if not data._id
-				callback 'Model does not have an ID, so remove was not called.'
+			if not conditions._id
+				throw 'Model does not have an ID, so remove was not called.'
 
-		@table.remove conditions, callback
+		@table.remove conditions, (err) =>
+			if err then throw err
+			callback.apply @, arguments
+
+	update: (query, data, callback) ->
+		@loadParams query, (err, updated, query) =>
+			@import data, () =>
+				if updated
+					@before_update()
+				else
+					@before_create()
+
+				@save (err) =>
+					callback.apply @, err, updated
+
+	before_update: () -> null
+	before_create: () -> null
