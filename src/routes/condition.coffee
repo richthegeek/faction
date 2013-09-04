@@ -7,13 +7,14 @@ module.exports = (server) ->
 
 	# Retrieve all conditions evaluated against this fact_type
 	server.get '/conditions/:fact-type', Condition_Model.route, (req, res, next) ->
-		req.model.loadPaginated {fact_type: req.params['fact-type']}, req, (err, response) ->
+		req.model.loadPaginated req.params.asQuery(), req, (err, response) ->
 			if err then return req.throw err
 			res.send response
 
 	# Retrieve a specific condition, by ID
 	server.get '/conditions/:fact-type/:condition-id', Condition_Model.route, (req, res, next) ->
-		req.model.loadParams req.params, () ->
+		console.log req.params.asQuery()
+		req.model.load req.params.asQuery(), () ->
 			res.send @export()
 
 	# Update a specific condition, by ID
@@ -22,7 +23,7 @@ module.exports = (server) ->
 		req.body.fact_type = req.params['fact-type']
 		req.body.condition_id = req.params['condition-id']
 
-		req.model.update req.params, req.body, (err, updated) ->
+		req.model.update req.params.asQuery(), req.body, (err, updated) ->
 			if err then return req.throw err
 			res.send {
 				status: 'ok',
@@ -32,7 +33,7 @@ module.exports = (server) ->
 
 	# Delete a specific condition, by ID
 	server.del '/conditions/:fact-type/:condition-id', Condition_Model.route, (req, res, next) ->
-		req.model.loadParams req.params, (err, found) ->
+		req.model.load req.params.asQuery(), (err, found) ->
 			if found
 				@remove () ->
 					res.send {
@@ -46,5 +47,46 @@ module.exports = (server) ->
 				}
 
 	# Test a condition against a specific fact.
-	server.get '/conditions/:fact-type/:condition-id/test/:fact-id', (req, res, next) ->
-		null
+	server.get '/conditions/:fact-type/:condition-id/test/:fact-id', Condition_Model.route, (req, res, next) ->
+		req.model.load req.params.asQuery('fact-type', 'condition-id'), (err) ->
+			condition = @
+			new Fact_Model req.account, condition.data.fact_type, () ->
+				@load {_id: req.params['fact-id']}, (err) ->
+					fact = @
+
+					bound = fact.bindFunctions()
+
+					catcher =
+						log: () -> logged.push 'log', arguments
+						error: () -> logged.push 'error', arguments
+						info: () -> logged.push 'info', arguments
+						warn: () -> logged.push 'warn', arguments
+
+					code = """
+					full = true;
+					condition.resultBreakdown = condition.conditions.map(function(condition) {
+						try {
+							res = eval(condition);
+							full = full && res;
+							return res;
+						} catch(e) {
+							console.error(e);
+							full = false;
+							return false;
+						}
+					});
+					condition.result = full;
+					"""
+
+					sandbox = {fact: bound, condition: condition.export(), console: console}
+					require('contextify')(sandbox)
+					sandbox.run code
+
+					console.log sandbox.condition
+
+					res.send {
+						condition: condition,
+						fact: fact,
+						result: sandbox.condition.result
+						result_breakdown: sandbox.condition.resultBreakdown
+					}

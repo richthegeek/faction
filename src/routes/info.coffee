@@ -12,8 +12,7 @@ module.exports = (server) ->
 
 	# list all info handlers for this info-type
 	server.get '/info/:info-type/handlers', Infohandler_Model.route, (req, res, next) ->
-		type = req.params['info-type']
-		req.model.loadPaginated {info_type: type}, req, (err, response) ->
+		req.model.loadPaginated req.params.asQuery(), req, (err, response) ->
 			if err then throw err
 			res.send response
 
@@ -33,7 +32,7 @@ module.exports = (server) ->
 	# delete a handler for this info-type
 	server.del '/info/:info-type/handler/:handler-id', Infohandler_Model.route, (req, res, next) ->
 		# delete the config, the opstream should take care of the rest.
-		req.model.remove {_id: req.params['handler-id']}, (err, count) ->
+		req.model.remove req.params.asQuery(), (err, count) ->
 			res.send {
 				status: 'ok',
 				statusText: 'The information handler was deleted.',

@@ -30,6 +30,18 @@ server.use (req, res, next) ->
 	req.throw = (err) ->
 		server.emit 'uncaughtException', req, res, req.route, err
 
+	req.params.asQuery = (allowed...) ->
+		if allowed.length is 0
+			allowed = (k for k, v of req.params)
+
+		ret = {}
+		for name in allowed when req.params[name]?
+			val = req.params[name]
+			if typeof val isnt 'function'
+				name = name.replace /[^a-z0-9_]+/ig, '_'
+				ret[name] = val
+		return ret
+
 	if req.route.auth is false
 		return next()
 

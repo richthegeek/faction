@@ -53,3 +53,40 @@ module.exports = class Fact_Model extends Model
 
 				callback result
 
+	bindFunctions: (data = @export()) ->
+		moment = require 'moment'
+
+		JSON.parse JSON.stringify(data), (key, value) ->
+			type = Object::toString.call(value).slice(8, -1)
+
+			if type is 'Array'
+				if (1 for item in value when item._value? and item._date?).length > 0
+					value.over = (period, time) ->
+						end = Number(time) or new Date().getTime()
+
+						if bits = period.match(/^([0-9]+) (second|minute|hour|day|week|month|year)/)
+							duration = moment.duration Number(bits[1]), bits[2]
+							start = end - duration
+							if 0 is duration.as 'milliseconds'
+								throw 'Invocation of Array.over with invalid duration string.'
+
+						else if seconds = Number(period)
+							start = end - seconds
+
+						else
+							throw 'Invocation of Array.over with invalid duration value.'
+
+						@betweenDates start, end
+
+					value.before = (time) -> @betweenDates 0, time
+					value.after = (time) -> @betweenDates time, new Date
+					value.betweenDates = (start, end) -> @filter (item) -> start <= (new Date item._date or +new Date()) <= end
+
+
+				value.values = () -> @filter((v) -> typeof v isnt 'function').map (v) -> v._value ? v
+				value.sum = () -> @values().reduce ((pv, cv) -> pv + (cv | 0)), 0
+				value.max = () -> @values().reduce ((pv, item) -> Math.max pv, item | 0), Math.max()
+				value.min = () -> @reduce ((pv, item) -> Math.min pv, item | 0), Math.min()
+				value.mean = () -> @sum() / @values().length
+
+			return value

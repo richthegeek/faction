@@ -1,14 +1,13 @@
 module.exports = (server) ->
 
 	# create an account
-	server.post {path: '/account', auth: false}, (req, res, next) ->
-		new Account_Model (account) ->
-			account.create req.body, (err) ->
-				res.send {
-					status: 'ok',
-					statusText: 'The account has been created',
-					account: account.export()
-				}
+	server.post {path: '/account', auth: false}, Account_Model.route, (req, res, next) ->
+		req.model.create req.body, (err) ->
+			res.send {
+				status: 'ok',
+				statusText: 'The account has been created',
+				account: account.export()
+			}
 
 	# show the account for this public/private keypair
 	# TODO: limit keys to children of this req.key

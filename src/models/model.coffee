@@ -35,7 +35,7 @@ module.exports = class Model
 		return query
 
 	loadParams: (params, callback) ->
-		@load @paramsToQuery(params), callback
+		@load params.asQuery(), callback
 
 	loadPaginated: (conditions, req, callback) ->
 		# get numerical params from the req.
@@ -105,7 +105,7 @@ module.exports = class Model
 			callback.apply @, arguments
 
 	update: (query, data, callback) ->
-		@loadParams query, (err, updated, query) =>
+		@load query, (err, updated, query) =>
 			@import data, () =>
 				if updated
 					@before_update()

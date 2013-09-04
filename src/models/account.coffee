@@ -2,7 +2,7 @@ check = require('validator').check
 crypto = require 'crypto'
 Model = require './model'
 
-module.exports = class Account extends Model
+module.exports = class Account_Model extends Model
 
 	constructor: (callback) ->
 		super 'core', 'accounts', callback
@@ -12,6 +12,11 @@ module.exports = class Account extends Model
 
 	dbname: () ->
 		return 'account_' + @data._id
+
+	@route = (req, res, next) ->
+		new Account_Model () ->
+			req.model = @
+			next()
 
 	create: (info, callback) ->
 		if typeof info is 'function'

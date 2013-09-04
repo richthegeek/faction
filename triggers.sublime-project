@@ -1,0 +1,27 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "/home/richard/www/git/triggers"
+		},
+		{
+			"follow_symlinks": true,
+			"path": "/home/richard/www/git/mongodb-opstream"
+		}
+	],
+	"settings":
+	{
+		"CoffeeScript":
+		{
+			"compileDir": "../lib",
+			"compilePaths":
+			{
+				"/home/richard/www/git/triggers/src": "../lib",
+				"/home/richard/www/git/triggers/src/models": "../../lib/models",
+				"/home/richard/www/git/triggers/src/routes": "../../lib/routes"
+			},
+			"sourceMaps": false
+		}
+	}
+}
