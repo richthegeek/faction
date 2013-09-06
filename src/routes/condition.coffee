@@ -13,7 +13,6 @@ module.exports = (server) ->
 
 	# Retrieve a specific condition, by ID
 	server.get '/conditions/:fact-type/:condition-id', Condition_Model.route, (req, res, next) ->
-		console.log req.params.asQuery()
 		req.model.load req.params.asQuery(), () ->
 			res.send @export()
 

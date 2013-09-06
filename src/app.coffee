@@ -18,6 +18,9 @@ server.on 'uncaughtException', (req, res, route, err) ->
 		status: "error",
 		statusText: err.message or err
 	}
+server.on 'NotFound', (req, res, next) -> res.send 404, status: 'error', statusText: 'Endpoint not found'
+server.on 'MethodNotAllowed', (req, res, next) -> res.send 404, status: 'error', statusText: 'Endpoint not found'
+server.on 'VersionNotAllowed', (req, res, next) -> res.send 404, status: 'error', statusText: 'Endpoint not found'
 
 # parse the query string and JSON-body automatically
 server.use restify.queryParser()
@@ -26,6 +29,12 @@ server.use restify.bodyParser mapParams: false
 
 # handle authorised routes.
 server.use (req, res, next) ->
+
+	res.notFound = (noun) ->
+		@send 404, {
+			status: 'error',
+			statusText: "Their was no #{noun} found matching those parameters"
+		}
 
 	req.throw = (err) ->
 		server.emit 'uncaughtException', req, res, req.route, err
@@ -82,6 +91,16 @@ server.use (req, res, next) ->
 							req.account = @
 							delete req.params.key
 							delete req.params.hash
+
+							# key.endpoint regular-expression limiting.
+							text = req.method.toUpperCase() + ' ' + req.path
+							while key.parent
+								for regex in key.endpoints or []
+									reg = new RegExp '^' + regex
+									if not reg.test text
+										throw "Request is not allowed using this key: failed on regex '#{regex}' against '#{text}'"
+								key = req.account.data.keys[key.parent] or {parent: null}
+
 							return next()
 
 						throw "Request signature did not match. (path = #{hash_parts[0]}, body = #{hash_parts[1]}"

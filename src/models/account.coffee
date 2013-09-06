@@ -34,7 +34,7 @@ module.exports = class Account_Model extends Model
 			if err
 				return callback err
 
-			@generateKey 'primary', null, callback
+			@generateKey 'primary', null, [], callback
 
 	setContact: (info, callback) ->
 		# copy info over to @data
@@ -59,18 +59,23 @@ module.exports = class Account_Model extends Model
 		# save
 		@save callback
 
-	generateKey: (name, parent, callback) ->
+	generateKey: (name, parent, endpoints = [], callback) ->
 		@data.keys ?= {}
 
 		# check that the parent exists!
 		if parent and not @data.keys[parent]?
 			return callback 'The specified parent does not exist.'
 
+		# ensure that the endpoints are valid regular expressions...
+		for regex in endpoints
+			reg = new RegExp regex
+
 		@data.keys[name] = {
 			name: name
 			parent: parent
 			public: @data._id + crypto.createHash('sha1').update(Math.random() + +new Date() + 'public').digest('hex').substring(0, 16)
-			private: crypto.createHash('sha512').update(Math.random() + +new Date() + 'private').digest('hex')
+			private: crypto.createHash('sha512').update(Math.random() + +new Date() + 'private').digest('hex'),
+			endpoints: endpoints
 		}
 
 		@save (err) =>

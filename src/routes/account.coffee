@@ -25,13 +25,44 @@ module.exports = (server) ->
 
 	# generate a key with this name, and parent being either the current key or req.params.parent
 	server.post '/account/key/:key-name', (req, res, next) ->
-		req.params.parent ?= req.key.name
-		req.account.generateKey req.params['key-name'], req.params.parent, (err, key) ->
-			res.send {
-				status: 'ok',
-				statusText: 'A new key with that key-name has been generated.',
-				key: key
-			}
+		keyname = req.params['key-name']
+		req.body.parent ?= req.account.data.keys[keyname].parent or req.key.name
+
+
+		if req.account.data.keys[keyname]? and not req.body.refresh?
+			# only update "parent" to one we own.
+			if parent = req.body.parent
+				children = req.account.getChildKeys req.key.name
+				for key in children when key.name is parent
+					updated = true
+					req.account.data.keys[keyname].parent = parent
+
+			# only update endpoints if the updated key is a child of the authorised key.
+			if endpoints = req.body.endpoints
+				# ensure that the endpoints are valid regular expressions...
+				for regex in endpoints
+					reg = new RegExp regex
+
+				children = req.account.getChildKeys req.key.name, false
+				for key in children when key.name is keyname
+					updated = true
+					req.account.data.keys[keyname].endpoints = endpoints
+
+			req.account.save (err) ->
+				if err then throw err
+				res.send {
+					status: 'ok',
+					statusText: 'The key was updated.',
+					key: req.account.data.keys[keyname]
+				}
+
+		else
+			req.account.generateKey keyname, req.body.parent, req.body.endpoints, (err, key) ->
+				res.send {
+					status: 'ok',
+					statusText: 'A new key with that key-name has been generated.',
+					key: key
+				}
 
 	# delete a key by this name.
 	server.del '/account/key/:key-name', (req, res, next) ->

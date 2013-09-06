@@ -80,7 +80,7 @@ module.exports = class Fact_Model extends Model
 
 					value.before = (time) -> @betweenDates 0, time
 					value.after = (time) -> @betweenDates time, new Date
-					value.betweenDates = (start, end) -> @filter (item) -> start <= (new Date item._date or +new Date()) <= end
+					value.betweenDates = (start, end) -> @filter (item) -> new Date(start) <= (new Date item._date or new Date()) <= new Date(end)
 
 
 				value.values = () -> @filter((v) -> typeof v isnt 'function').map (v) -> v._value ? v
@@ -88,5 +88,9 @@ module.exports = class Fact_Model extends Model
 				value.max = () -> @values().reduce ((pv, item) -> Math.max pv, item | 0), Math.max()
 				value.min = () -> @reduce ((pv, item) -> Math.min pv, item | 0), Math.min()
 				value.mean = () -> @sum() / @values().length
+				value.gt  = (val) -> @values().filter (v) -> v > val
+				value.gte = (val) -> @values().filter (v) -> v >= val
+				value.lt  = (val) -> @values().filter (v) -> v < val
+				value.lte = (val) -> @values().filter (v) -> v <= val
 
 			return value

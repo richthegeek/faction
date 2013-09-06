@@ -15,7 +15,7 @@ module.exports = class Condition_Model extends Model
 			next()
 
 	validate: (data) ->
-		if (not data.conditions) or (not data.conditions instanceof Array) or data.conditions.length is 0
+		if not Array.isArray(data.conditions) or data.conditions.length is 0
 			throw 'A condition must have an array of conditions to be evaluated.'
 
 		# todo: check conditions are valid JS.

@@ -43,7 +43,7 @@ module.exports = class InfoHandler_Model extends Model
 
 	export: () ->
 		return {
-			id: @data.handler_id,
+			handler_id: @data.handler_id,
 			fact_type: @data.fact_type,
 			fact_identifier: @data.fact_identifier,
 			track: @data.track

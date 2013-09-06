@@ -113,7 +113,7 @@ module.exports = class Model
 					@before_create()
 
 				@save (err) =>
-					callback.apply @, err, updated
+					callback.call @, err, updated
 
 	before_update: () -> null
 	before_create: () -> null
