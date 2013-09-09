@@ -1,11 +1,13 @@
 {
 	"name": "triggers",
-	"description": "Triggering REST server as defined by http://docs.triggers.apiary.io/",
+	"description": "Triggering REST server as defined by http://docs.faction.apiary.io/",
 	"dependencies": {
+		"mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git",
 		"validator": "*",
 		"restify": "*",
 		"async": "*",
-		"mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git"
+		"contextify": "*",
+		"moment": "*"
 	},
 	"scripts": {
 		"start": "node ./lib/app",

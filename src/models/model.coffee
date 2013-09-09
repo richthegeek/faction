@@ -10,6 +10,8 @@ module.exports = class Model
 	_spawn: (callback) ->
 		new @constructor @db, @table, callback
 
+	setup: () -> null
+
 	import: (data, callback) ->
 		@data = @data or {}
 		for k,v of data or {}
@@ -113,6 +115,7 @@ module.exports = class Model
 					@before_create()
 
 				@save (err) =>
+					console.log 5
 					callback.call @, err, updated
 
 	before_update: () -> null

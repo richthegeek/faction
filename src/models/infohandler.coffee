@@ -15,6 +15,10 @@ module.exports = class InfoHandler_Model extends Model
 			req.model = @
 			next()
 
+	setup: () ->
+		@table.ensureIndex {handler_id: 1, info_type: 1}, {unique: true}, () -> null
+		@table.ensureIndex {fact_type: 1}, {}, () -> null
+
 	validate: (data) ->
 		check(data.fact_type, {
 			notEmpty: 'An information-handler should have a fact_type property',
@@ -29,17 +33,6 @@ module.exports = class InfoHandler_Model extends Model
 
 		if not data.handler_id
 			throw 'An information-handler must have an ID defined. (This error should not be seen)'
-
-	create: (type, info, callback) ->
-		if typeof info is 'function'
-			callback = info
-			info = {}
-
-		info.info_type = type
-		delete info._id
-
-		@data = info
-		@save callback
 
 	export: () ->
 		return {

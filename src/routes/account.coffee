@@ -6,8 +6,15 @@ module.exports = (server) ->
 			res.send {
 				status: 'ok',
 				statusText: 'The account has been created',
-				account: account.export()
+				account: req.model.export()
 			}
+
+	server.post '/account/setup', (req, res, next) ->
+		req.account.setup()
+		res.send {
+			status: 'ok'
+			statusText: 'You know what you did.'
+		}
 
 	# show the account for this public/private keypair
 	# TODO: limit keys to children of this req.key

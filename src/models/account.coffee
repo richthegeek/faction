@@ -18,6 +18,13 @@ module.exports = class Account_Model extends Model
 			req.model = @
 			next()
 
+	setup: () ->
+		new Action_Model @, () -> @setup()
+		new Condition_Model @, () -> @setup()
+		new Infohandler_Model @, () -> @setup()
+		new Info_Model @, () -> @setup()
+
+
 	create: (info, callback) ->
 		if typeof info is 'function'
 			callback = info
@@ -29,12 +36,14 @@ module.exports = class Account_Model extends Model
 		base = new Date().getTime().toString() + Math.round 1000 * do Math.random
 		@data._id = crypto.createHash('sha1').update(base).digest('hex').substring(0, 16)
 
+		@setup()
+
 		# generate a key, and set the contact information
 		@setContact info, (err) =>
 			if err
 				return callback err
 
-			@generateKey 'primary', null, [], callback
+			@generateKey 'primary', null, ['.*'], callback
 
 	setContact: (info, callback) ->
 		# copy info over to @data
@@ -54,7 +63,6 @@ module.exports = class Account_Model extends Model
 			notNull: 'Contact email (body property: "email") must be non-empty',
 			isEmail: 'Contact email (body property: "email") must be valid'
 		}).notNull().isEmail()
-		console.log '.'
 
 		# save
 		@save callback

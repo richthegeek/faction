@@ -20,13 +20,15 @@ module.exports = (server) ->
 	server.post '/info/:info-type/handler/:handler-id', Infohandler_Model.route, (req, res, next) ->
 		# insert a handler config.
 		# insert an opstream for turning configs into opstreams.
+		delete req.body._id
+		req.body.info_type = req.params['info-type']
 		req.body.handler_id = req.params['handler-id']
-		req.model.create req.params['info-type'], req.body, (err) =>
+		req.model.update req.params.asQuery(), req.body, (err, updated) =>
 			if err then throw err
 			res.send {
 				status: 'ok',
-				statusText: 'The information handler was updated.',
-				handler: @export()
+				statusText: 'The information handler was ' + (updated and 'updated.' or 'created.'),
+				handler: req.model.export()
 			}
 
 	# delete a handler for this info-type
