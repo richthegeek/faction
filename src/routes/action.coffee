@@ -1,5 +1,10 @@
 module.exports = (server) ->
 
+	# list all action-types
+	server.get '/action-types', Action_Model.route, (req, res, next) ->
+		req.model.actionTypes (err, types) ->
+			res.send types
+
 	# list all actions
 	server.get '/actions', Action_Model.route, (req, res, next) ->
 		req.model.loadPaginated {}, req, (err, response) ->
@@ -64,6 +69,29 @@ module.exports = (server) ->
 							fact: fact,
 							result: false
 						}
+
+	action_exec = (req, res, next) ->
+		req.params.stage ?= 0
+		req.model.load req.params.asQuery('fact-type', 'action-id'), (err, found) ->
+			if err then throw err
+			if not found then return res.notFound 'action'
+			action = @
+			new Fact_Model req.account, action.data.fact_type, (err) ->
+				@load {_id: req.params['fact-id']}, (err, found) ->
+				if err then throw err
+				if not found then return res.notFound 'fact'
+				fact = @
+				@db.collection('fact_evaluated').insert {
+					id: fact.id,
+					type: action.fact_type,
+					result: {},
+					time: +new Date,
+					stage: req.params.stage
+				}
+				res.send {status: 'ok', statusText: 'The action was queued to be executed', action: action, fact: fact}
+
+	server.get '/action/:fact-type/:action-id/exec/:fact-id', Action_Model.route, action_exec
+	server.get '/action/:fact-type/:action-id/exec/:fact-id/:stage', Action_Model.route, action_exec
 
 	server.del '/action/:fact-type/:action-id', Action_Model.route, (req, res, next) ->
 		req.model.load req.params.asQuery(), (err, found) ->

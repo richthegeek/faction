@@ -1,5 +1,3 @@
-console.log __dirname
-
 async = require 'async'
 Model = require './model'
 module.exports = class Condition_Model extends Model
@@ -16,11 +14,12 @@ module.exports = class Condition_Model extends Model
 			req.model = @
 			next()
 
-	validate: (data) ->
+	validate: (data, callback) ->
 		if not Array.isArray(data.conditions) or data.conditions.length is 0
 			throw 'A condition must have an array of conditions to be evaluated.'
 
 		# todo: check conditions are valid JS.
+		callback()
 
 	export: () ->
 		data = super
@@ -50,7 +49,7 @@ module.exports = class Condition_Model extends Model
 			},
 			account: {
 				_id: @account.data._id,
-				db: @account.dbname()
+				databaseName: @account.dbname()
 			},
 			exec: (row, callback) ->
 				# row is a "change manifest" with the following keys:
@@ -61,41 +60,48 @@ module.exports = class Condition_Model extends Model
 				cache = @modules.cache.create 'conditions-' + @account, true, (key, next) =>
 					@stream.db.collection('conditions').find().toArray(next)
 
-				fact_collection = @stream.db.collection('fact_' + row.type)
-				fact_collection.findOne {_id: row.id}, (err, fact) =>
-					if err then return callback err
-					if not fact then return callback()
+				modules = @modules
 
-					code = """condition.result = condition.conditions.every(function(condition) {
-						try {
-							return eval(condition);
-						} catch(e) {
-							console.error(e);
-							return false;
-						}
-					});"""
+				account = @account
+				account.dbname = () -> account.databaseName
 
-					result = {}
-					cache.get (err, conditions) =>
-						sandbox = {
-							fact: @modules.fact.prototype.bindFunctions(fact),
-							condition: null,
-							console: console
-						}
-						@modules.context(sandbox)
-						for condition in conditions when condition.fact_type is row.type
-							sandbox.condition = condition
-							sandbox.run code
+				new modules.fact account, row.type, () ->
+					table = @table
+					@load {_id: row.id}, (err, fact) =>
+						if err then return callback err
+						if not fact then return callback()
 
-							result[condition.condition_id] = !! sandbox.condition.result
-
-						# update the original fact with these condition values
-						fact_collection.update {_id: row.id}, {$set: _conditions: result}, (err) =>
-							# and create a "fact_evaluated" for actions to listen for...
-							callback err, {
-								id: row.id,
-								type: row.type,
-								result: result,
-								time: +new Date
+						code = """condition.result = condition.conditions.every(function(condition) {
+							try {
+								return eval(condition);
+							} catch(e) {
+								console.error(e);
+								return false;
 							}
+						});"""
+
+						result = {}
+						cache.get (err, conditions) =>
+							sandbox = {
+								fact: modules.fact.prototype.bindFunctions(fact),
+								condition: null,
+								console: console
+							}
+							modules.context(sandbox)
+
+							for condition in conditions when condition.fact_type is row.type
+								sandbox.condition = condition
+								sandbox.run code
+
+								result[condition.condition_id] = !! sandbox.condition.result
+
+							# update the original fact with these condition values
+							table.update {_id: row.id}, {$set: _conditions: result}, (err) =>
+								# and create a "fact_evaluated" for actions to listen for...
+								callback err, {
+									id: row.id,
+									type: row.type,
+									result: result,
+									time: +new Date
+								}
 		}

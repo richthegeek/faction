@@ -29,7 +29,7 @@ module.exports = class Model
 
 		@table.findOne conditions, (err, row) =>
 			@import row, () =>
-				callback.call @, err, row, conditions
+				callback.call @, err, @, conditions
 
 	paramsToQuery: (params) ->
 		query = {}
@@ -82,18 +82,21 @@ module.exports = class Model
 
 						callback.call @, err, response
 
-	validate: (data) ->
-		null
+	validate: (data, callback) ->
+		callback()
 
 	save: (callback) ->
 		try
-			@validate @export()
+			@validate @export(), (err) =>
+				if err then throw err
+
+				@table.save @data, (err) =>
+					if err then throw err
+					callback.apply @, arguments
+
 		catch e
 			return callback e
 
-		@table.save @data, (err) =>
-			if err then throw err
-			callback.apply @, arguments
 
 	remove: (conditions, callback) ->
 		if typeof conditions is 'function'
