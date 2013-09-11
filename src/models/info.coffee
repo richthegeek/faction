@@ -33,10 +33,13 @@ module.exports = class Info_Model extends Model
 		}
 
 		@table.addStreamOperationType 'info_multiplex', {
-			dependencies: ['shared-cache', 'async'],
+			dependencies: {
+				cache: 'shared-cache',
+				async: 'async'
+			},
 			account: @account.data._id,
 			exec: (row, callback) ->
-				handler_cache = @modules['shared-cache'].create 'info-handlers-' + @account, true, (key, next) =>
+				handler_cache = @modules.cache.create 'info-handlers-' + @account, true, (key, next) =>
 					@stream.db.collection('info_handlers').find().toArray(next)
 
 				interpolate = (str, context) ->
@@ -117,6 +120,6 @@ module.exports = class Info_Model extends Model
 							console.error 'Info_Handler failure', e
 							next()
 
-					@modules.async.eachSeries handlers, iterator, (err) ->
-						callback err, null
+					@modules.async.map handlers, iterator, (err, rows) ->
+						callback err, rows
 		}
