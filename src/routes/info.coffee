@@ -26,7 +26,7 @@ module.exports = (server) ->
 			res.send response
 
 	# update a handler for this info-type
-	server.post '/info/:info-type/handler/:handler-id', Infohandler_Model.route, (req, res, next) ->
+	server.post '/info/:info-type/handlers/:handler-id', Infohandler_Model.route, (req, res, next) ->
 		# insert a handler config.
 		# insert an opstream for turning configs into opstreams.
 		delete req.body._id
@@ -41,7 +41,7 @@ module.exports = (server) ->
 			}
 
 	# delete a handler for this info-type
-	server.del '/info/:info-type/handler/:handler-id', Infohandler_Model.route, (req, res, next) ->
+	server.del '/info/:info-type/handlers/:handler-id', Infohandler_Model.route, (req, res, next) ->
 		# delete the config, the opstream should take care of the rest.
 		req.model.remove req.params.asQuery(), (err, count) ->
 			res.send {

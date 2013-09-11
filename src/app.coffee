@@ -86,7 +86,10 @@ server.use (req, res, next) ->
 
 						hash = crypto.createHash('sha256').update(hash_parts.join('')).digest('hex')
 
-						if hash is req.query.hash
+						if (key.secure is false) or (hash is req.query.hash)
+							if key.secure is false
+								console.log 'Bypassing security'
+
 							req.key = key
 							req.account = @
 							delete req.params.key

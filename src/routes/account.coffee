@@ -33,8 +33,7 @@ module.exports = (server) ->
 	# generate a key with this name, and parent being either the current key or req.params.parent
 	server.post '/account/key/:key-name', (req, res, next) ->
 		keyname = req.params['key-name']
-		req.body.parent ?= req.account.data.keys[keyname].parent or req.key.name
-
+		req.body.parent ?= req.account.data.keys[keyname]?.parent or req.key.name
 
 		if req.account.data.keys[keyname]? and not req.body.refresh?
 			# only update "parent" to one we own.
@@ -47,7 +46,8 @@ module.exports = (server) ->
 			# only update endpoints if the updated key is a child of the authorised key.
 			if endpoints = req.body.endpoints
 				# ensure that the endpoints are valid regular expressions...
-				for regex in endpoints
+				for i, regex of endpoints
+					endpoints[i] = regex = regex.replace /\//g, '\\/'
 					reg = new RegExp regex
 
 				children = req.account.getChildKeys req.key.name, false
@@ -55,6 +55,7 @@ module.exports = (server) ->
 					updated = true
 					req.account.data.keys[keyname].endpoints = endpoints
 
+			req.account.data.keys[keyname].secure = !! (req.body.secure ? true)
 			req.account.save (err) ->
 				if err then throw err
 				res.send {
@@ -64,7 +65,7 @@ module.exports = (server) ->
 				}
 
 		else
-			req.account.generateKey keyname, req.body.parent, req.body.endpoints, (err, key) ->
+			req.account.generateKey keyname, req.body, (err, key) ->
 				res.send {
 					status: 'ok',
 					statusText: 'A new key with that key-name has been generated.',

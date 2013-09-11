@@ -43,7 +43,7 @@ module.exports = class Account_Model extends Model
 			if err
 				return callback err
 
-			@generateKey 'primary', null, ['.*'], callback
+			@generateKey 'primary', {parent: null, endpoints: ['.*'], secure: true}, callback
 
 	setContact: (info, callback) ->
 		# copy info over to @data
@@ -67,8 +67,12 @@ module.exports = class Account_Model extends Model
 		# save
 		@save callback
 
-	generateKey: (name, parent, endpoints = [], callback) ->
+	generateKey: (name, options, callback) ->
 		@data.keys ?= {}
+
+		parent = options.parent ? null
+		endpoints = options.endpoints ? ['.*']
+		secure = options.secure ? true
 
 		# check that the parent exists!
 		if parent and not @data.keys[parent]?
@@ -84,6 +88,7 @@ module.exports = class Account_Model extends Model
 			public: @data._id + crypto.createHash('sha1').update(Math.random() + +new Date() + 'public').digest('hex').substring(0, 16)
 			private: crypto.createHash('sha512').update(Math.random() + +new Date() + 'private').digest('hex'),
 			endpoints: endpoints
+			secure: !! secure
 		}
 
 		@save (err) =>
