@@ -7,7 +7,8 @@
 		"restify": "*",
 		"async": "*",
 		"contextify": "*",
-		"moment": "*"
+		"moment": "*",
+		"shared-cache": "*"
 	},
 	"scripts": {
 		"start": "node ./lib/app",

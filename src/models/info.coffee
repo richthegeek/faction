@@ -26,14 +26,18 @@ module.exports = class Info_Model extends Model
 
 	setup: ->
 		@table.addStreamOperation {
-			operations: [{operation: 'info_multiplex'}]
+			_id: 'info_handlers',
+			type: 'untracked',
+			operations: [{operation: 'info_multiplex'}],
+			targetCollection: 'fact_updates'
 		}
+
 		@table.addStreamOperationType 'info_multiplex', {
 			dependencies: ['shared-cache', 'async'],
+			account: @account.data._id,
 			exec: (row, callback) ->
-				if not @handler_cache
-					@handler_cache = new @modules['shared-cache'] 'info-handlers', true, (key, next) =>
-						@stream.db.collection('info_handlers').find().toArray(next)
+				handler_cache = @modules['shared-cache'].create 'info-handlers-' + @account, true, (key, next) =>
+					@stream.db.collection('info_handlers').find().toArray(next)
 
 				interpolate = (str, context) ->
 					for k,v of context
@@ -46,7 +50,7 @@ module.exports = class Info_Model extends Model
 
 					return str
 
-				time = new Date
+				time = row._id.getTimestamp()
 				modes =
 					all: (fact, set, col, val) ->
 						set.$push ?= {}
@@ -73,7 +77,7 @@ module.exports = class Info_Model extends Model
 							set.$set ?= {}
 							set.$set[col] = val
 
-				@handler_cache.get (err, handlers, cache_hit) =>
+				handler_cache.get (err, handlers, cache_hit) =>
 					iterator = (handler, next) =>
 						if handler.info_type isnt row._type
 							return next()
@@ -87,7 +91,7 @@ module.exports = class Info_Model extends Model
 
 							type = handler.fact_type.replace(/[^a-z0-9_]+/g, '_').substring(0, 60)
 							collection = @stream.db.collection('fact_' + type)
-							collection.findOne {_id: id}, (err, fact) ->
+							collection.findOne {_id: id}, (err, fact) =>
 								set = {}
 								fact = fact or {}
 								for mode, columns of handler.track
@@ -97,7 +101,11 @@ module.exports = class Info_Model extends Model
 										if fn = modes[mode]
 											fn fact, set, col, val
 
-								collection.update {_id: id}, set, {upsert: true}, next
+								collection.update {_id: id}, set, {upsert: true}, (err) ->
+									next err, {
+										id: id, type: type,
+										time: +new Date, query: JSON.stringify set
+									}
 
 						catch e
 							update =

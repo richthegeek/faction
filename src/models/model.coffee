@@ -19,6 +19,8 @@ module.exports = class Model
 		callback.call @, @data
 
 	export: () -> @data
+	@export = (data) -> @::export.call({data: data})
+
 	toJSON: () -> @export()
 
 	load: (conditions, callback) ->

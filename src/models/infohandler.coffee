@@ -1,6 +1,7 @@
 check = require('validator').check
 crypto = require 'crypto'
 Model = require './model'
+Cache = require 'shared-cache'
 
 module.exports = class InfoHandler_Model extends Model
 
@@ -33,6 +34,11 @@ module.exports = class InfoHandler_Model extends Model
 
 		if not data.handler_id
 			throw 'An information-handler must have an ID defined. (This error should not be seen)'
+
+	save: () ->
+		# mark the handler cache as stale
+		Cache.create('info-handlers-' + @account.data._id, false, (key, next) => @table.find().toArray next).stale()
+		super
 
 	export: () ->
 		return {

@@ -8,6 +8,18 @@
 		{
 			"follow_symlinks": true,
 			"path": "/home/richard/www/git/mongodb-opstream"
+		},
+		{
+			"follow_symlinks": true,
+			"path": "/home/richard/www/git/dcache"
+		},
+		{
+			"follow_symlinks": true,
+			"path": "/home/richard/www/git/mongodb-opstream-daemon"
+		},
+		{
+			"follow_symlinks": true,
+			"path": "/home/richard/www/git/delayedping"
 		}
 	],
 	"settings":

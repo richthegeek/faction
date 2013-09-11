@@ -1,14 +1,23 @@
+Cache = require 'shared-cache'
+
 module.exports = (server) ->
 
 	# post information of a specific type
+	# uses the caching module to keep the list of handlers up to date without always grabbing it.
 	server.post '/info/:info-type', Info_Model.route, (req, res, next) ->
+		handlers = Cache.create 'info-handlers-' + req.account.data._id, true, (key, next) ->
+			new Infohandler_Model req.account, () ->
+				@table.find().toArray next
+
 		req.model.create req.params['info-type'], req.body, (err) ->
 			if err then throw err
 
-			res.send {
-				status: 'ok',
-				statusText: 'Information recieved'
-			}
+			handlers.get (err, list, hit) ->
+				res.send {
+					status: 'ok',
+					statusText: 'Information recieved',
+					handlers: (Infohandler_Model.export(handler) for handler in list when handler.info_type is req.params['info-type'])
+				}
 
 	# list all info handlers for this info-type
 	server.get '/info/:info-type/handlers', Infohandler_Model.route, (req, res, next) ->
