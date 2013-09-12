@@ -73,11 +73,29 @@ module.exports = class Action_Model extends Model
 				return callback null, false
 
 		@actionTypes (err, types) =>
+			index = stage
 			runner = (action, next) =>
 				if type = types[action.action]
-					type.exec action, factObj.export(), next
+					info = {
+						step: action,
+						action: @export()
+						fact: factObj.export(),
+						fact_type: factObj.type,
+						account: @account,
+						stage: index++
+					}
+					type.exec info, (err, res, broke = false) ->
+						if err then next 'err', err
+						else if broke then next 'break', res
+						else next null, res
 
-			async.mapSeries @data.actions.slice(stage), runner, callback
+			async.mapSeries @data.actions.slice(stage), runner, (e, r) ->
+				if e is 'err'
+					e = r
+					r = null
+				if e is 'break'
+					e = null
+				callback e, r, index - 1
 
 
 	actionTypes: (callback) ->
@@ -107,12 +125,9 @@ module.exports = class Action_Model extends Model
 			dependencies: {
 				'cache': 'shared-cache',
 				'async': 'async',
+				'account': __dirname + '/account'
 				'fact': __dirname + '/fact',
 				'action': __dirname + '/action'
-			},
-			account: {
-				_id: @account.data._id,
-				databaseName: @account.dbname()
 			},
 			exec: (row, callback) ->
 				cache = @modules.cache.create 'actions-' + @account, true, (key, next) =>
@@ -120,33 +135,36 @@ module.exports = class Action_Model extends Model
 
 				modules = @modules
 
-				account = @account
-				account.dbname = () -> account.databaseName
+				account_id = @stream.db.databaseName.replace(/^account_/,'')
+				new modules.account () ->
+					@load {_id: account_id}, () ->
+						account = @
+						new modules.fact account, row.type, (self) ->
+							@load {_id: row.id}, (err) ->
+								fact = @
 
-				new modules.fact account, row.type, (self) ->
-					@load {_id: row.id}, (err) ->
-						fact = @
+								iterator = (action, next) ->
+									if action.fact_type != fact.type
+										return next()
 
-						iterator = (action, next) ->
-							if action.fact_type != fact.type
-								return next()
+									new modules.action account, (err) ->
+										@import action, () ->
+											action = @
 
-							new modules.action account, (err) ->
-								@import action, () ->
-									action = @
+											@fact_run fact, row.stage or 0, (err, result, final_stage) ->
+												next null, {
+													action_id: action.data.action_id,
+													fact_type: action.data.fact_type,
+													fact_id: row.id,
+													time: new Date,
+													result: [].concat(err or result),
+													status: (err and 'error' or 'ok'),
+													stage_from: Number(row.stage or 0),
+													stage_to: final_stage
+												}
 
-									@fact_run fact, row.stage or 0, (err, result) ->
-										next err, result and {
-											action_id: action.data.action_id,
-											fact_type: action.data.fact_type,
-											fact_id: row.id,
-											time: new Date,
-											result: err or result,
-											status: (err and 'error' or 'ok')
-										}
-
-						cache.get (err, actions) ->
-							modules.async.map actions, iterator, (err, rows) ->
-								callback null, rows
+								cache.get (err, actions) ->
+									modules.async.map actions, iterator, (err, rows) ->
+										callback null, rows
 
 		}

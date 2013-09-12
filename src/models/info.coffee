@@ -37,15 +37,15 @@ module.exports = class Info_Model extends Model
 				cache: 'shared-cache',
 				async: 'async'
 			},
-			account: @account.data._id,
 			exec: (row, callback) ->
 				handler_cache = @modules.cache.create 'info-handlers-' + @account, true, (key, next) =>
 					@stream.db.collection('info_handlers').find().toArray(next)
 
-				interpolate = (str, context) ->
-					for k,v of context
-						@[k] = v
-
+				interpolate = (str, fact, info) ->
+					context = {
+						fact: fact,
+						info: info
+					}
 					sections = str.match /\#\{.+?\}/g
 					for section in sections
 						`with(context) { result = eval(section.slice(2,-1)) }`
@@ -90,7 +90,7 @@ module.exports = class Info_Model extends Model
 						#  - get any track data
 						#  - use atomic updates to add this data to the fact
 						try
-							id = interpolate handler.fact_identifier, row
+							id = interpolate handler.fact_identifier, fact, row
 
 							type = handler.fact_type.replace(/[^a-z0-9_]+/g, '_').substring(0, 60)
 							collection = @stream.db.collection('fact_' + type)
@@ -99,15 +99,18 @@ module.exports = class Info_Model extends Model
 								fact = fact or {}
 								for mode, columns of handler.track
 									for col, str of columns
-										val = interpolate str, row
+										val = interpolate str, fact, row
 
 										if fn = modes[mode]
 											fn fact, set, col, val
 
 								collection.update {_id: id}, set, {upsert: true}, (err) ->
+									# write to fact_updates
 									next err, {
-										id: id, type: type,
-										time: +new Date, query: JSON.stringify set
+										id: id,
+										type: type,
+										time: +new Date,
+										query: JSON.stringify set
 									}
 
 						catch e

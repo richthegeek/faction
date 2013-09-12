@@ -24,7 +24,6 @@ module.exports = class Account_Model extends Model
 		new Infohandler_Model @, () -> @setup()
 		new Info_Model @, () -> @setup()
 
-
 	create: (info, callback) ->
 		if typeof info is 'function'
 			callback = info

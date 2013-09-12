@@ -98,10 +98,11 @@ server.use (req, res, next) ->
 							# key.endpoint regular-expression limiting.
 							text = req.method.toUpperCase() + ' ' + req.path
 							while key.parent
-								for regex in key.endpoints or []
-									reg = new RegExp '^' + regex
-									if not reg.test text
-										throw "Request is not allowed using this key: failed on regex '#{regex}' against '#{text}'"
+								key.endpoints = [].concat key.endpoints
+								# if no endpoints match, and the endpoints are longer than one
+								if key.endpoints.length > 0 and (1 for regex in key.endpoints when new RegExp('^' + regex).test(text)).length is 0
+									throw "Request is not allowed using this key due to endpoint restriction."
+
 								key = req.account.data.keys[key.parent] or {parent: null}
 
 							return next()

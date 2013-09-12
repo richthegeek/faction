@@ -44,12 +44,9 @@ module.exports = class Condition_Model extends Model
 			dependencies: {
 				'cache': 'shared-cache',
 				'async': 'async',
-				'fact': __dirname + '/fact',
-				'context': 'contextify'
-			},
-			account: {
-				_id: @account.data._id,
-				databaseName: @account.dbname()
+				'context': 'contextify',
+				'account': __dirname + '/fact',
+				'fact': __dirname + '/fact'
 			},
 			exec: (row, callback) ->
 				# row is a "change manifest" with the following keys:
@@ -62,8 +59,8 @@ module.exports = class Condition_Model extends Model
 
 				modules = @modules
 
-				account = @account
-				account.dbname = () -> account.databaseName
+				account = new modules.account()
+				account.load {_id: @stream.db.databaseName.replace(/^account_/,'')}
 
 				new modules.fact account, row.type, () ->
 					table = @table

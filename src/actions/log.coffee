@@ -7,5 +7,5 @@ module.exports =
 		return callback 'I cant do that dave'
 		callback null, true
 
-	exec: (action, fact, next) ->
-		return next null, action.message
+	exec: (info, next) ->
+		return next null, info.step.message

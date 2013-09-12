@@ -27,5 +27,7 @@ module.exports = class ActionResult_Model extends Model
 			fact_id: @data.fact_id,
 			time: @data.time,
 			status: @data.status,
-			result: @data.result
+			result: @data.result,
+			from: @data.stage_from,
+			to: @data.stage_to
 		}

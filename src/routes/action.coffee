@@ -78,22 +78,22 @@ module.exports = (server) ->
 			action = @
 			new Fact_Model req.account, action.data.fact_type, (err) ->
 				@load {_id: req.params['fact-id']}, (err, found) ->
-				if err then throw err
-				if not found then return res.notFound 'fact'
-				fact = @
-				@db.collection('fact_evaluated').insert {
-					id: fact.id,
-					type: action.fact_type,
-					result: {},
-					time: +new Date,
-					stage: req.params.stage
-				}
-				res.send {
-					status: 'ok',
-					statusText: 'The action was queued to be executed',
-					action: action,
-					fact: fact
-				}
+					if err then throw err
+					if not found then return res.notFound 'fact'
+					fact = @
+					@db.collection('fact_evaluated').insert {
+						id: fact.data._id,
+						type: fact.type,
+						result: {},
+						time: +new Date,
+						stage: req.params.stage
+					}
+					res.send {
+						status: 'ok',
+						statusText: 'The action was queued to be executed',
+						action: action,
+						fact: fact
+					}
 
 	server.get '/actions/:fact-type/:action-id/exec/:fact-id', Action_Model.route, action_exec
 	server.get '/actions/:fact-type/:action-id/exec/:fact-id/:stage', Action_Model.route, action_exec
