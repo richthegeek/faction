@@ -5,13 +5,13 @@ Model = require './model'
 module.exports = class Account_Model extends Model
 
 	constructor: (callback) ->
-		super 'core', 'accounts', callback
+		super 'faction', 'accounts', callback
 
 	_spawn: (callback) ->
 		new @constructor callback
 
 	dbname: () ->
-		return 'account_' + @data._id
+		return 'faction_account_' + @data._id
 
 	@route = (req, res, next) ->
 		new Account_Model () ->
@@ -19,10 +19,10 @@ module.exports = class Account_Model extends Model
 			next()
 
 	setup: () ->
-		new Action_Model @, () -> @setup()
-		new Condition_Model @, () -> @setup()
-		new Infohandler_Model @, () -> @setup()
 		new Info_Model @, () -> @setup()
+		new Infomapping_Model @, () -> @setup()
+		new Condition_Model @, () -> @setup()
+		new Action_Model @, () -> @setup()
 
 	create: (info, callback) ->
 		if typeof info is 'function'
@@ -35,14 +35,15 @@ module.exports = class Account_Model extends Model
 		base = new Date().getTime().toString() + Math.round 1000 * do Math.random
 		@data._id = crypto.createHash('sha1').update(base).digest('hex').substring(0, 16)
 
-		@setup()
 
 		# generate a key, and set the contact information
 		@setContact info, (err) =>
 			if err
 				return callback err
 
-			@generateKey 'primary', {parent: null, endpoints: ['.*'], secure: true}, callback
+			@generateKey 'primary', {parent: null, endpoints: ['.*'], secure: true}, (e, a, b) =>
+				@setup()
+				callback e, a, b
 
 	setContact: (info, callback) ->
 		# copy info over to @data
@@ -52,19 +53,21 @@ module.exports = class Account_Model extends Model
 		for k, v of info when v
 			@data.contact[k] = v
 
-		# validate contact information.
-		check(@data.contact.name, {
-			notNull: 'Contact name (body property: "name") must be non-empty',
-			notEmpty: 'Contact name (body property: "name") must be non-empty'
-		}).notNull().notEmpty()
-
-		check(@data.contact.email, {
-			notNull: 'Contact email (body property: "email") must be non-empty',
-			isEmail: 'Contact email (body property: "email") must be valid'
-		}).notNull().isEmail()
-
 		# save
 		@save callback
+
+	validate: (data, callback) ->
+		data.contact ?= {}
+		if not data.contact.name
+			return callback 'Contact name (body property: "name") must be non-empty'
+
+		if not data.contact.email
+			return callback 'Contact email (body property: "email") must be valid'
+
+		if not data.contact.email.match /^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9-.]+$/i
+			return callback 'Contact email must be valid.'
+
+		callback()
 
 	generateKey: (name, options, callback) ->
 		@data.keys ?= {}

@@ -2,7 +2,7 @@ module.exports = (server) ->
 
 	# create an account
 	server.post {path: '/account', auth: false}, Account_Model.route, (req, res, next) ->
-		req.model.create req.body, (err) ->
+		req.model.create req.body, ErrorHandler next, () ->
 			res.send {
 				status: 'ok',
 				statusText: 'The account has been created',
@@ -11,7 +11,7 @@ module.exports = (server) ->
 
 	server.post '/account/setup', (req, res, next) ->
 		req.account.setup()
-		res.send {
+		next res.send {
 			status: 'ok'
 			statusText: 'You know what you did.'
 		}
@@ -19,11 +19,11 @@ module.exports = (server) ->
 	# show the account for this public/private keypair
 	# TODO: limit keys to children of this req.key
 	server.get '/account', (req, res, next) ->
-		res.send req.account.export req.key
+		next res.send req.account.export req.key
 
 	# update the contact info for this account.
 	server.post '/account/contact', (req, res, next) ->
-		req.account.setContact req.body, (err) ->
+		req.account.setContact req.body, ErrorHandler next, () ->
 			res.send {
 				status: 'ok',
 				statusText: 'The account contact information was updated.',
@@ -56,8 +56,7 @@ module.exports = (server) ->
 					req.account.data.keys[keyname].endpoints = endpoints
 
 			req.account.data.keys[keyname].secure = !! (req.body.secure ? true)
-			req.account.save (err) ->
-				if err then throw err
+			req.account.save ErrorHandler next, (err) ->
 				res.send {
 					status: 'ok',
 					statusText: 'The key was updated.',
@@ -65,7 +64,7 @@ module.exports = (server) ->
 				}
 
 		else
-			req.account.generateKey keyname, req.body, (err, key) ->
+			req.account.generateKey keyname, req.body, ErrorHandler next, (err, key) ->
 				res.send {
 					status: 'ok',
 					statusText: 'A new key with that key-name has been generated.',
@@ -76,11 +75,11 @@ module.exports = (server) ->
 	server.del '/account/key/:key-name', (req, res, next) ->
 		children = req.account.getChildKeys req.key.name
 		for key in children when key.name is req.params['key-name']
-			return req.account.deleteKey req.params['key-name'], (err, removed) ->
+			return req.account.deleteKey req.params['key-name'], ErrorHandler next, (err, removed) ->
 				res.send {
 					status: 'ok',
 					statusText: 'The key and its children were removed'
 					keys: (key.name for key in removed)
 				}
 
-		throw 'The named key could not be deleted - either it does not exist or is not a child of the authorised key.'
+		next 'The named key could not be deleted - either it does not exist or is not a child of the authorised key.'

@@ -1,5 +1,3 @@
-check = require('validator').check
-
 module.exports = class Model
 
 	constructor: (db, collection, callback) ->
@@ -29,7 +27,7 @@ module.exports = class Model
 
 		@table.findOne conditions, (err, row) =>
 			@import row, () =>
-				callback.call @, err, @, conditions
+				callback.call @, err, row, conditions
 
 	paramsToQuery: (params) ->
 		query = {}
@@ -43,24 +41,30 @@ module.exports = class Model
 
 	loadPaginated: (conditions, req, callback) ->
 		# get numerical params from the req.
-		req.query.page ?= 0
-		req.query.limit ?= 100
+		req.query.page = Number req.query.page ? 0
+		req.query.limit = Number req.query.limit ? 100
 
-		check(req.query.page, {
-			isInt: 'The page query parameter must be numeric',
-			min: 'The page query parameter must be greater than zero.'
-		}).isInt().min(0)
+		if isNaN(req.query.page) or req.query.page < 0
+			return callback 'The page query parameter must be numeric and greater than 0'
 
-		check(req.query.limit, {
-			isInt: 'The limit query parameter must be numeric',
-			min: 'The limit query parameter must be greater than one.'
-		}).isInt().min(1)
+		if isNaN(req.query.limit) or req.query.limit < 1
+			return callback 'The limit query parameter must be numeric and greater than 1'
 
 		skip = req.query.page * req.query.limit
 
 		@table.find conditions, (err, cursor) =>
 			if err then return callback err
 			cursor.count (err, size) =>
+				if req.params.sort
+					bits = req.params.sort.toString().split(',')
+					sort = {}
+					for param in bits
+						if param.substring(0, 1) is '-'
+							sort[param.slice(1)] = -1
+						else
+							sort[param] = 1
+					cursor.sort(sort)
+
 				cursor.skip(skip).limit(req.query.limit).toArray (err, items) =>
 
 					new Grouped_Model @, items, () ->
@@ -85,34 +89,35 @@ module.exports = class Model
 	validate: (data, callback) ->
 		callback()
 
+	create: (data, callback) ->
+		@import data, () =>
+			@save callback
+
 	save: (callback) ->
-		try
 			@validate @export(), (err) =>
-				if err then throw err
-
-				@table.save @data, (err) =>
-					if err then throw err
-					callback.apply @, arguments
-
-		catch e
-			return callback e
-
+				if err then return callback err
+				@table.save @data, () => callback.apply @, arguments
 
 	remove: (conditions, callback) ->
 		if typeof conditions is 'function'
 			callback = conditions
 			conditions = {}
-			conditions._id = @export()._id
+			conditions._id = @data._id
 
 			if not conditions._id
-				throw 'Model does not have an ID, so remove was not called.'
+				return callback 'Model does not have an ID, so remove was not called.'
 
-		@table.remove conditions, (err) =>
-			if err then throw err
-			callback.apply @, arguments
+		@table.remove conditions, () => callback.apply @, arguments
 
-	update: (query, data, callback) ->
+	update: (query, data, updateOnly, callback) ->
+		if typeof updateOnly is 'function'
+			callback = updateOnly
+			updateOnly = false
+
 		@load query, (err, updated, query) =>
+			if updateOnly and not updated
+				return callback 'Not Found'
+
 			@import data, () =>
 				if updated
 					@before_update()
@@ -120,7 +125,6 @@ module.exports = class Model
 					@before_create()
 
 				@save (err) =>
-					console.log 5
 					callback.call @, err, updated
 
 	before_update: () -> null

@@ -45,7 +45,7 @@ module.exports = class Condition_Model extends Model
 				'cache': 'shared-cache',
 				'async': 'async',
 				'context': 'contextify',
-				'account': __dirname + '/fact',
+				'account': __dirname + '/account',
 				'fact': __dirname + '/fact'
 			},
 			exec: (row, callback) ->

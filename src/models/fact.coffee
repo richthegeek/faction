@@ -5,14 +5,14 @@ module.exports = class Fact_Model extends Model
 	constructor: (@account, @type, callback) ->
 		@type = type.replace(/[^a-z0-9_]+/g, '_').substring(0, 60)
 
-		super account.dbname(), @collectionname(type), (self, db, coll) ->
+		super account.dbname(), @collectionname(), (self, db, coll) ->
 			callback.apply @, arguments
 
 	_spawn: (callback) ->
 		new @constructor @account, @type, callback
 
-	collectionname: (type) ->
-		'fact_' + type
+	@collectionname = @::collectionname = (type = @type) ->
+		'facts_' + type.replace(/[^a-z0-9_]+/g, '_').substring(0, 60)
 
 	@route = (req, res, next) ->
 		if req.params['fact-type']
@@ -30,7 +30,7 @@ module.exports = class Fact_Model extends Model
 			# list all collections with the right name...
 			db.collectionNames (err, collections) ->
 				len = db.databaseName.length + 1
-				result = (for coll in collections when 'fact_' is coll.name.substring len, len + 5
+				result = (for coll in collections when 'facts_' is coll.name.substring len, len + 5
 					coll.name.slice len + 5
 				)
 
@@ -46,12 +46,11 @@ module.exports = class Fact_Model extends Model
 								}
 
 					async.map result, iter, (err, info) ->
-						if err then throw err
 						obj = {}
-						obj[fact.fact_type] = fact for fact in info
-						callback obj
+						obj[fact.fact_type] = fact for fact in info or []
+						callback err, obj
 
-				callback result
+				callback err, result
 
 	bindFunctions: (data = @export()) ->
 		moment = require 'moment'
