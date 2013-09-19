@@ -1,14 +1,12 @@
 module.exports = (server) ->
 
 	server.get '/conditions', Condition_Model.route, (req, res, next) ->
-		req.model.loadPaginated {}, req, (err, response) ->
-			if err then return req.throw err
+		req.model.loadPaginated {}, req, ErrorHandler next, (err, response) ->
 			res.send response
 
 	# Retrieve all conditions evaluated against this fact_type
 	server.get '/conditions/:fact-type', Condition_Model.route, (req, res, next) ->
-		req.model.loadPaginated req.params.asQuery(), req, (err, response) ->
-			if err then return req.throw err
+		req.model.loadPaginated req.params.asQuery(), req, ErrorHandler next, (err, response) ->
 			res.send response
 
 	# Retrieve a specific condition, by ID
@@ -22,8 +20,7 @@ module.exports = (server) ->
 		req.body.fact_type = req.params['fact-type']
 		req.body.condition_id = req.params['condition-id']
 
-		req.model.update req.params.asQuery(), req.body, (err, updated) ->
-			if err then return req.throw err
+		req.model.update req.params.asQuery(), req.body, ErrorHandler next, (err, updated) ->
 			res.send {
 				status: 'ok',
 				statusText: 'The condition was ' + (updated and 'updated.' or 'created.'),
@@ -32,13 +29,13 @@ module.exports = (server) ->
 
 	# Delete a specific condition, by ID
 	server.del '/conditions/:fact-type/:condition-id', Condition_Model.route, (req, res, next) ->
-		req.model.load req.params.asQuery(), (err, found) ->
+		req.model.load req.params.asQuery(), ErrorHandler next, (err, found) ->
 			if found
-				@remove () ->
-					res.send {
-						status: "ok",
-						statusText: "The condition was removed."
-					}
+				@remove()
+				res.send {
+					status: "ok",
+					statusText: "The condition was removed."
+				}
 			else
 				res.send 404, {
 					status: "warning",
@@ -50,7 +47,7 @@ module.exports = (server) ->
 		req.model.load req.params.asQuery('fact-type', 'condition-id'), (err) ->
 			condition = @
 			new Fact_Model req.account, condition.data.fact_type, () ->
-				@load {_id: req.params['fact-id']}, (err) ->
+				@load {_id: req.params['fact-id']}, ErrorHandler next, (err) ->
 					fact = @
 
 					bound = fact.bindFunctions()

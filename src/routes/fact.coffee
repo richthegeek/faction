@@ -13,8 +13,7 @@ module.exports = (server) ->
 
 	# get fact settings
 	server.get '/facts/:fact-type/settings', Factsettings_Model.route, (req, res, next) ->
-		req.model.load {_id: req.params['fact-type']}, ErrorHandler next, () ->
-			console.log 'GOT', arguments
+		req.model.load {_id: req.params['fact-type']}, ErrorHandler next, (err, found) ->
 			res.send @export()
 
 	# update fact settings

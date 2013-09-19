@@ -119,10 +119,9 @@ module.exports = class InfoMapping_Model extends Model
 					fact_query: '{session_id: info.session_id}',
 					fields:
 						session_id: 'info.session_id'
-						visits: [
+						visits:
 							url: 'info.url',
 							time: 'new Date'
-						]
 				With this we need to:
 				 - run the fact_query against the facts_user collection
 				 - create the object mapping
@@ -155,7 +154,9 @@ module.exports = class InfoMapping_Model extends Model
 
 							facts_col = self.stream.db.collection self.modules.fact.collectionname row._type
 							facts_col.find(query).toArray (err, facts) ->
-								if err then return next err
+								if err
+									return next err
+
 								# ensure there is at least one fact
 								if facts.length is 0
 									facts.push {}
@@ -165,7 +166,7 @@ module.exports = class InfoMapping_Model extends Model
 
 								# evaluate the mapping against each fact
 								next null, facts.map (fact) ->
-									obj = self.parseObject mapping.fields, {item: row, fact: fact}
+									obj = self.parseObject mapping.fields, {info: row, fact: fact}
 									# copy over the query fields, if they aren't otherwise set
 									obj[k] ?= v for k, v of query
 
@@ -177,7 +178,8 @@ module.exports = class InfoMapping_Model extends Model
 									}
 
 						self.modules.async.map mappings, iterator, (err, result) ->
-							result = [].concat.apply [], result
+							# flatten results into single array
+							result = [].concat.apply([], result).filter (r) -> !! r
 
 							iterator = (info, next) ->
 								setting = (set for set in settings when set._id is info.mapping.fact_type).pop()
@@ -238,9 +240,11 @@ module.exports = class InfoMapping_Model extends Model
 
 									if existing._id and (existing._id isnt info.fact._id)
 										fact = mergeFacts existing, result
-										fact._id = id.join('-')
+
+									fact._id = id.join('-')
 
 									info.collection.update {_id: fact._id}, fact, {upsert: true}, (err) ->
+										console.log 4, arguments
 										# write to fact_updates
 										next err, {
 											id: fact._id,
@@ -248,5 +252,8 @@ module.exports = class InfoMapping_Model extends Model
 											time: +new Date
 										}
 
-							self.modules.async.map result, iterator, callback
+							self.modules.async.map result, iterator, () ->
+								console.log 'COMPLETE', arguments
+
+								# callback
 		}

@@ -10,9 +10,9 @@ module.exports = (server) ->
 				@table.find().toArray next
 
 		req.model.create req.params['info-type'], req.body, (err) ->
-			if err then throw err
+			if err then return next err
 
-			mappings.get (err, list, hit) ->
+			mappings.get ErrorHandler next, (err, list, hit) ->
 				res.send {
 					status: 'ok',
 					statusText: 'Information recieved',

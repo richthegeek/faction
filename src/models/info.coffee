@@ -15,6 +15,7 @@ module.exports = class Info_Model extends Model
 			callback = info
 			info = {}
 
+		delete info._id
 		info._type = type
 		@table.insert info, callback
 
