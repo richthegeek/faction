@@ -24,6 +24,26 @@ module.exports = class Fact_Model extends Model
 	removeFull: (callback) ->
 		@table.drop callback
 
+	load: (query, shim, callback) ->
+		args = Array::slice.call(arguments, 1)
+		callback = args.pop()
+		shim = args.pop() or false
+
+		super query, () ->
+			@addShim callback
+
+	loadAll: (query, shim, callback) ->
+		args = Array::slice.call(arguments, 1)
+		callback = args.pop()
+		shim = args.pop() or false
+
+		@table.find(query, {_id: 1}).toArray (err, ids) =>
+			loader = (row, next) =>
+				@_spawn () ->
+					@load {_id: row._id}, shim, next
+
+			async.map ids, loader, callback
+
 	@getTypes = (account, callback) ->
 		# open a connection to the database.
 		mongodb.open account.dbname(), (err, db) ->
@@ -54,6 +74,7 @@ module.exports = class Fact_Model extends Model
 
 	bindFunctions: (data = @export()) ->
 		moment = require 'moment'
+		traverse = require 'traverse'
 
 		bind_array = (value) ->
 			if (1 for item in value when item._value? and item._date?).length > 0
@@ -79,21 +100,96 @@ module.exports = class Fact_Model extends Model
 				value.betweenDates = (start, end) -> bind_array @filter (item) -> new Date(start) <= (new Date item._date or new Date()) <= new Date(end)
 
 
-			value.values = () -> @filter((v) -> typeof v isnt 'function').map (v) -> v._value ? v
-			value.sum = () -> @values().reduce ((pv, cv) -> pv + (cv | 0)), 0
-			value.max = () -> @values().reduce ((pv, item) -> Math.max pv, item | 0), Math.max()
-			value.min = () -> @reduce ((pv, item) -> Math.min pv, item | 0), Math.min()
-			value.mean = () -> @sum() / @values().length
-			value.gt  = (val) -> @values().filter (v) -> v > val
-			value.gte = (val) -> @values().filter (v) -> v >= val
-			value.lt  = (val) -> @values().filter (v) -> v < val
-			value.lte = (val) -> @values().filter (v) -> v <= val
+			value.values = (column) ->
+				return bind_array @filter((v) -> typeof v isnt 'function').map (v) ->
+					v = v._value ? v
+					return (column and v[column] or v)
+
+			value.sum  = (column) -> @values(column).reduce ((pv, cv) -> pv + (cv | 0)), 0
+			value.max  = (column) -> @values(column).reduce ((pv, item) -> Math.max pv, item | 0), Math.max()
+			value.min  = (column) -> @values(column).reduce ((pv, item) -> Math.min pv, item | 0), Math.min()
+			value.mean = (column) -> @sum(column) / @values(column).length
+
+			compare = (column, val, fn) ->
+				args = Array::slice.call arguments
+				fn = args.pop()
+				val = args.pop()
+				column = args.pop()
+				@values(column).filter (v) -> fn val, v
+			value.gt  = (column, val) -> compare.call @, column, val, (val, v) -> v > val
+			value.gte = (column, val) -> compare.call @, column, val, (val, v) -> v >= val
+			value.lt  = (column, val) -> compare.call @, column, val, (val, v) -> v < val
+			value.lte = (column, val) -> compare.call @, column, val, (val, v) -> v <= val
 			return value
 
-		JSON.parse JSON.stringify(data), (key, value) ->
+		traverse(data).forEach (value) ->
 			type = Object::toString.call(value).slice(8, -1)
 
 			if type is 'Array'
-				value = bind_array value
+				@update bind_array value
 
-			return value
+		return data
+
+	# add various functions to a fact:
+	#  - get(path): return values matching the given path
+	#  - Array functions:
+	#		- general: sum, max, min, mean, gt, gte, lt, lte, values
+	#		- temporal: over, before, after, betweendates, values
+	addShim: (callback) ->
+		table = @table
+		type = @type
+
+		loadFK = (properties, callback) =>
+			InfoMapping_Model.parseObject properties.query, {fact: @data}, (query) =>
+				new Fact_Model @account, properties.fact_type, () ->
+					if query._id? or properties.has is 'one'
+						@load query, true, callback
+					else
+						@loadAll query, true, callback
+
+		cache = require 'shared-cache'
+		_settings = cache.create 'fact-settings-' + @account.data._id, true, (key, next) =>
+			@db.collection('fact_settings').find().toArray next
+
+		_settings.get (err, allSettings) =>
+			settings = (set for set in allSettings when set._id is type).pop() or {foreign_keys: []}
+
+			@bindFunctions @data
+			@data.getSettings = () -> settings
+			@data.get = (args..., callback) ->
+				result = this
+
+				# allow arguments to be specified like paths, ie "user/name" as well as arrays
+				args = [].concat.apply [], args.map (arg) -> arg.split /[\.\/]/
+
+				i = 0
+				iter = (arg, next) =>
+					i++
+
+					extract = (obj, cb) =>
+						if typeof obj is 'function'
+							return obj cb
+						cb null, (v for k, v of obj or {})
+
+					if arg is '*'
+						extract result, (err, res) ->
+							next null, result = res
+
+					else if result[arg]?
+						if typeof result[arg] is 'function'
+							return result[arg] (err, res) ->
+								next null, result = res
+						next null, result = result[arg]
+
+					else if i is 1 and settings.foreign_keys[arg]?
+						loadFK.call this, settings.foreign_keys[arg], (err, res) ->
+							next err, result = res
+
+					else if Array.isArray(result)
+						ii = (r, n) -> extract r[arg], n
+						async.map result, ii, (err, res) ->
+							next err, result = [].concat.apply [], res
+
+				async.eachSeries args, iter, (err) -> callback err, result
+
+			callback null, @data

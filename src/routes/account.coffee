@@ -19,6 +19,8 @@ module.exports = (server) ->
 	# show the account for this public/private keypair
 	# TODO: limit keys to children of this req.key
 	server.get '/account', (req, res, next) ->
+		if not req.account
+			return next res.notFound 'account'
 		next res.send req.account.export req.key
 
 	# update the contact info for this account.

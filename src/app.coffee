@@ -36,8 +36,6 @@ global.ErrorHandler = (next, good) ->
 		else
 			next good.apply this, arguments
 
-global.error = (message) -> {status: 'error', statusText: message}
-
 # handle errors that are produced by Exceptions.
 # this makes it easier to produce errors in routes.
 server.on 'uncaughtException', (req, res, route, err) ->
@@ -67,14 +65,7 @@ server.use (req, res, next) ->
 	next()
 
 server.use (req, res, next) ->
-	res.notFound = (noun) ->
-		@send 404, {
-			status: 'error',
-			statusText: "Their was no #{noun} found matching those parameters"
-		}
-
-	req.throw = (err) ->
-		server.emit 'uncaughtException', req, res, req.route, err
+	res.notFound = (noun) -> @send 404, status: 'error', statusText: "Their was no #{noun} found matching those parameters"
 
 	req.params.asQuery = (allowed...) ->
 		if allowed.length is 0
@@ -99,6 +90,7 @@ for dir of files
 global.Auth = {}
 for name, fn of files.auth
 	Auth[name] = fn
+	server.use Auth[name]
 
 for name, model of files.models
 	name = name.slice(0,1).toUpperCase() + name.slice(1) + '_Model'
@@ -106,10 +98,6 @@ for name, model of files.models
 
 for group, fn of files.routes
 	fn server
-
-
-# add the HMAC auth handler
-server.use Auth.HMAC
 
 # listen on the configured port.
 console.log 'Listening on', config.port

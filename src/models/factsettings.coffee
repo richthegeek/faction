@@ -22,9 +22,14 @@ module.exports = class FactSettings_Model extends Model
 			if mode not in modes
 				return callback 'Field mode must be one of (' + modes.join(', ') + ')'
 
-		@data.primary_key = data.primary_key ?= ['_id']
-		if not Array.isArray(data.primary_key) or data.primary_key.length is 0
-			return callback 'The primary_key field must be an array of one or more field names'
+		@data.foreign_keys = data.foreign_keys ?= {}
+		for key, props of data.foreign_keys
+			if key.match /[^a-z0-9_]/i
+				return callback 'Foreign keys names may only contain A-Z, a-z, 0-9, and _'
+			if not props.fact_type or not props.query
+				return callback 'Foreign keys must have a fact_type and query property.'
+			if props.query.toString() isnt '[object Object]' or (k for k of props.query).length is 0
+				return callback 'Foreign key query must be a non-empty object.'
 
 		callback()
 
