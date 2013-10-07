@@ -19,6 +19,10 @@ module.exports = class FactSettings_Model extends Model
 	validate: (data, callback) ->
 		modes = ['all', 'newest', 'oldest', 'max', 'min']
 		for field, mode of data.field_modes
+			if typeof mode is 'object'
+				mode.mode ?= 'newest'
+				mode = mode.mode
+				data.field_modes[field].mode = mode
 			if mode not in modes
 				return callback 'Field mode must be one of (' + modes.join(', ') + ')'
 
@@ -36,6 +40,7 @@ module.exports = class FactSettings_Model extends Model
 	export: () ->
 		return {
 			fact_type: @data._id,
+			foreign_keys: @data.foreign_keys,
 			field_modes: @data.field_modes,
 			primary_key: @data.primary_key
 		}

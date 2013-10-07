@@ -1,13 +1,16 @@
 module.exports = (stream, config, row) ->
+
+	{evaluate, parseObject} = require('./eval')(stream, config, row)
+
 	return (fk, fact, next) ->
 		# find in the collection using this query
 		try
-			config.models.infomapping.parseObject fk.query, {fact: fact}, (query) =>
+			parseObject fk.query, {fact: fact}, (query) =>
 
 				# execute any eval fields of the fact...
 				modes = fact.getSettings().field_modes ? {}
 				for key, props of modes when props.eval
-					fact[key] = config.models.infomapping.eval props.eval, {fact: fact}
+					fact[key] = evaluate props.eval, {fact: fact}
 
 				# verify its not an empty query...
 				size = 0

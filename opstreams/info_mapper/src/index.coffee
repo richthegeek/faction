@@ -28,6 +28,9 @@ module.exports = (stream, config) ->
 		mergeFacts = require('./merge_facts')(stream, config, row)
 		markForeignFacts = require('./mark_foreign_facts')(stream, config, row)
 
+		{evaluate, parseObject} = require('./eval')(stream, config, row)
+
+
 		fn = (next) -> next()
 		if not @accountModel?
 			fn = (next) ->
@@ -78,7 +81,7 @@ module.exports = (stream, config) ->
 						if mapping.info_type isnt row._type
 							return next()
 
-						query = _id: InfoMapping_Model.eval mapping.fact_identifier, {info: row}
+						query = _id: evaluate mapping.fact_identifier, {info: row}
 
 						new Fact_Model account, mapping.fact_type, () ->
 							model = @
@@ -89,7 +92,7 @@ module.exports = (stream, config) ->
 								delete row._type
 								delete row._id if Object::toString.call(row._id) is '[object Object]'
 
-								InfoMapping_Model.parseObject mapping.fields, {info: row, fact: fact}, (obj) ->
+								parseObject mapping.fields, {info: row, fact: fact}, (obj) ->
 									obj._id = query._id
 
 									next null, {

@@ -120,6 +120,28 @@ module.exports = class Fact_Model extends Model
 			value.gte = (column, val) -> compare.call @, column, val, (val, v) -> v >= val
 			value.lt  = (column, val) -> compare.call @, column, val, (val, v) -> v < val
 			value.lte = (column, val) -> compare.call @, column, val, (val, v) -> v <= val
+
+			value.match = (params) ->
+				# allow calling like (key, val, key, val, key, val)
+				args = Array::slice.call arguments
+				if args.length > 1 and typeof args[0] is 'string'
+					params = {}
+					while args.length >= 2
+						params[args.shift()] = args.shift()
+
+				@values().filter (row) ->
+					for key, val of params
+						# if it's a regex-like string (/....../) try parse it.
+						if typeof val is 'string' and val.match /^\/.+\/$/
+							try
+								val = new RegExp val.slice(1, -1)
+							catch e then null
+
+						val.test ?= (v) -> val is v
+						if not val.test row[key]
+							return false
+					return true
+
 			return value
 
 		traverse(data).forEach (value) ->
@@ -139,13 +161,22 @@ module.exports = class Fact_Model extends Model
 		table = @table
 		type = @type
 
+		FKCache = {}
 		loadFK = (properties, callback) =>
+			if FKCache[properties.key]?
+				return process.nextTick () -> callback null, FKCache[properties.key]
+
+			next = (err, data) ->
+				if data
+					FKCache[properties.key] = data
+				return callback err, data
+
 			InfoMapping_Model.parseObject properties.query, {fact: @data}, (query) =>
 				new Fact_Model @account, properties.fact_type, () ->
 					if query._id? or properties.has is 'one'
-						@load query, true, callback
+						@load query, true, next
 					else
-						@loadAll query, true, callback
+						@loadAll query, true, next
 
 		cache = require 'shared-cache'
 		_settings = cache.create 'fact-settings-' + @account.data._id, true, (key, next) =>
@@ -153,6 +184,13 @@ module.exports = class Fact_Model extends Model
 
 		_settings.get (err, allSettings) =>
 			settings = (set for set in allSettings when set._id is type).pop() or {foreign_keys: []}
+
+			# copy the key over.
+			fk_arr = []
+			for k, v of settings.foreign_keys
+				settings.foreign_keys[k].key = k
+				settings.foreign_keys[k].autoload ?= false
+				fk_arr.push settings.foreign_keys[k]
 
 			@bindFunctions @data
 			@data.getSettings = () -> settings
@@ -192,4 +230,14 @@ module.exports = class Fact_Model extends Model
 
 				async.eachSeries args, iter, (err) -> callback err, result
 
-			callback null, @data
+			loadAutoFKs = (fk, next) =>
+				if fk.autoload isnt true
+					return next()
+
+				loadFK fk, (err, data) =>
+					if data
+						@data[fk.key] = data
+					next()
+
+			async.each fk_arr, loadAutoFKs, () =>
+				callback null, @data

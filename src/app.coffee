@@ -51,6 +51,8 @@ server.on 'VersionNotAllowed', (req, res, next) -> next res.send 404, status: 'e
 # logging
 server.on 'after', (req, res, route, err) ->
 	time = new Date - res._time
+	req.route ?= {}
+	req.route.path ?= req._path
 	console.log "#{req.method} #{req.route.path} (#{time}ms): #{res.statusCode}"
 
 # parse the query string and JSON-body automatically
