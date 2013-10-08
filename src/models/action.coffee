@@ -113,13 +113,19 @@ module.exports = class Action_Model extends Model
 		cache.get callback
 
 	setup: () ->
+		path = require 'path'
 		@db.addStreamOperation {
 			_id: 'action_eval',
 			sourceCollection: 'fact_evaluated',
 			targetCollection: 'action_results',
 			type: 'untracked',
-			operations: [{operation: 'perform_action'}],
+			operations: [{
+				modular: true
+				operation: path.resolve(__dirname, '../../opstreams/perform_action')
+			}],
 		}
+
+		return
 
 		@db.addStreamOperationType 'perform_action', {
 			dependencies: {

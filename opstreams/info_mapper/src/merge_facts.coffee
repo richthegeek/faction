@@ -1,10 +1,10 @@
 module.exports = (stream, config, row) ->
 	xtend = require 'xtend'
-	return (setting, old_fact, mid_fact) ->
+	return (settings, old_fact, mid_fact) ->
 		new_fact = xtend old_fact, mid_fact
 
 		# apply the field_modes
-		for field, mode of setting.field_modes when mid_fact[field]
+		for field, mode of settings.field_modes when mid_fact[field]
 			if mode is 'all'
 				orig = old_fact[field] or []
 				orig = [] if not Array.isArray orig

@@ -51,7 +51,7 @@ module.exports = class InfoMapping_Model extends Model
 	setup: ->
 		path = require 'path'
 		@db.addStreamOperation {
-			_id: 'info_handlers',
+			_id: 'info_mapper',
 			type: 'untracked',
 			operations: [{
 				modular: true

@@ -1,5 +1,7 @@
 module.exports = (stream, config, row) ->
 
+	async = require 'async'
+
 	evaluate = (str, context, callback) ->
 		context.isAsync = false
 		context.async = (val = true) -> context.isAsync = val

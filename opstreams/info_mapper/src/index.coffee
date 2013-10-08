@@ -27,13 +27,13 @@ module.exports = (stream, config) ->
 
 		mergeFacts = require('./merge_facts')(stream, config, row)
 		markForeignFacts = require('./mark_foreign_facts')(stream, config, row)
-
+		addShim = require('./add_shim')(stream, config, row)
 		{evaluate, parseObject} = require('./eval')(stream, config, row)
 
+		fns = []
 
-		fn = (next) -> next()
 		if not @accountModel?
-			fn = (next) ->
+			fns.push (next) ->
 				new Account_Model () ->
 					self.accountModel = @
 					@load {_id: stream.db.databaseName.replace(/^faction_account_/,'')}, next
@@ -73,64 +73,81 @@ module.exports = (stream, config) ->
 		 - save, ping any FKs as updated.
 		###
 
-		return fn () =>
+		fns.push (account, skip..., next) -> _mappings.get (err, mappings) -> next err, mappings
+		fns.push (mappings, skip..., next) -> _settings.get (err, settings) -> next err, mappings, settings
+
+		return async.waterfall fns, (err, mappings, settings) =>
 			account = @accountModel
-			_mappings.get (err, mappings) ->
-				_settings.get (err, settings) ->
-					parseMappings = (mapping, next) ->
-						if mapping.info_type isnt row._type
-							return next()
 
-						query = _id: evaluate mapping.fact_identifier, {info: row}
+			parseMappings = (mapping, next) ->
+				if mapping.info_type isnt row._type
+					return next()
 
-						new Fact_Model account, mapping.fact_type, () ->
-							model = @
-							@load query, true, (err, fact = {}) ->
-								if err
-									return next err
+				query = _id: evaluate mapping.fact_identifier, {info: row}
 
-								delete row._type
-								delete row._id if Object::toString.call(row._id) is '[object Object]'
+				new Fact_Model account, mapping.fact_type, () ->
+					model = @
+					@load query, true, (err, fact = {}) ->
+						if err
+							return next err
 
-								parseObject mapping.fields, {info: row, fact: fact}, (obj) ->
-									obj._id = query._id
+						addShim fact, account, @db, @table, @type, (err, fact) ->
+							delete row._type
+							delete row._id if Object::toString.call(row._id) is '[object Object]'
 
-									next null, {
-										model: model
-										fact: fact,
-										mapping: mapping,
-										info: obj
-									}
+							parseObject mapping.fields, {info: row, fact: fact}, (obj) ->
+								obj._id = query._id
 
-					combineMappings = (info, next) ->
-						setting = info.fact.getSettings()
-						info.model.import mergeFacts(setting, info.fact, info.info), () ->
-							@addShim (err, fact) ->
+								next null, {
+									model: model
+									fact: fact,
+									mapping: mapping,
+									info: obj
+								}
 
-								# save this into the target collection, move on
-								info.model.table.save fact, (err) ->
-									# create additional fact updates for FKs
-									list = (fk for field, fk of setting.foreign_keys or {})
+			combineMappings = (info, next) ->
+				set = info.fact.getSettings()
+				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
+				info.model.import mergeFacts(set, info.fact, info.info), () ->
+					addShim @data, account, @db, @table, @type, (err, fact) ->
 
-									iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
-									async.map list, iter_wrap, (err, updates) ->
-										updates = updates.filter (v) -> v and v.length > 0
-										updates.push {
-											id: fact._id,
-											type: info.mapping.fact_type,
-											time: +new Date
-										}
-										console.log 'Nearly', updates
-										return
-										# write to fact_updates
-										next err, updates
+						# execute any eval fields of the fact...
+						modes = set.field_modes
+						for key, props of modes when props.eval
+							fact[key] = evaluate props.eval, {fact: fact}
+
+						# delete any "delete" feilds AFTER eval
+						for key, mode of modes when mode is 'delete'
+							delete fact[key]
+
+						for key of set.foreign_keys
+							delete fact[key]
+
+						# save this into the target collection, move on
+						info.model.table.save fact, (err) ->
+							# create additional fact updates for FKs
+							list = (fk for field, fk of set.foreign_keys or {})
+
+							iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
+							async.map list, iter_wrap, (err, updates) ->
+								updates = updates.filter (v) -> v and v.length > 0
+								updates.push {
+									id: fact._id,
+									type: info.mapping.fact_type,
+									time: +new Date
+								}
+								# write to fact_updates
+								next err, updates
 
 
-					async.map mappings, parseMappings, (err, result) ->
-						# flatten results into single array
-						result = [].concat.apply([], result).filter (r) -> !! r
+			async.map mappings, parseMappings, (err, result) ->
+				# flatten results into single array
+				result = [].concat.apply([], result).filter (r) -> !! r
 
-						async.map result, combineMappings, () ->
-							console.log 'COMPLETE', arguments
+				async.map result, combineMappings, (err, result) ->
+					# double concat...
+					result = [].concat.apply([], result)
+					result = [].concat.apply([], result)
+					result = result.filter (r) -> (!! r) and not Array.isArray r
 
-						# callback
+					callback err, result

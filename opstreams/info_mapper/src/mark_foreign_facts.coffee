@@ -7,11 +7,6 @@ module.exports = (stream, config, row) ->
 		try
 			parseObject fk.query, {fact: fact}, (query) =>
 
-				# execute any eval fields of the fact...
-				modes = fact.getSettings().field_modes ? {}
-				for key, props of modes when props.eval
-					fact[key] = evaluate props.eval, {fact: fact}
-
 				# verify its not an empty query...
 				size = 0
 				for k, v of query when v?

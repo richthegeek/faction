@@ -2,10 +2,10 @@
 module.exports = function(stream, config, row) {
   var xtend;
   xtend = require('xtend');
-  return function(setting, old_fact, mid_fact) {
+  return function(settings, old_fact, mid_fact) {
     var a, ac, b, field, i, j, k, list, mode, new_fact, orig, v, _i, _j, _ref, _ref1, _ref2, _ref3;
     new_fact = xtend(old_fact, mid_fact);
-    _ref = setting.field_modes;
+    _ref = settings.field_modes;
     for (field in _ref) {
       mode = _ref[field];
       if (!mid_fact[field]) {

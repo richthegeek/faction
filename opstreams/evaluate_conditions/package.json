@@ -1,9 +1,9 @@
 {
-	"name": "info_mapper",
+	"name": "evaluate_conditions",
 	"private": true,
 	"version": "0.0.1",
 	"dependencies": {
-		"xtend": "*",
+		"contextify": "*",
 		"shared-cache": "*",
 		"async": "*"
 	},
