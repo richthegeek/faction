@@ -67,14 +67,14 @@ server.use (req, res, next) ->
 	next()
 
 server.use (req, res, next) ->
-	res.notFound = (noun) -> @send 404, status: 'error', statusText: "Their was no #{noun} found matching those parameters"
+	res.notFound = (noun) -> @send 404, status: 'error', statusText: "There was no #{noun} found matching those parameters"
 
 	req.params.asQuery = (allowed...) ->
 		if allowed.length is 0
 			allowed = (k for k, v of req.params)
 
 		ret = {}
-		for name in allowed when req.params[name]?
+		for name in allowed when req.params[name]? and name isnt 'body'
 			val = req.params[name]
 			if typeof val isnt 'function'
 				name = name.replace /[^a-z0-9_]+/ig, '_'

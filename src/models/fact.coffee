@@ -49,11 +49,14 @@ module.exports = class Fact_Model extends Model
 		# open a connection to the database.
 		mongodb.open account.dbname(), (err, db) ->
 			# list all collections with the right name...
-			db.collectionNames (err, collections) ->
-				len = db.databaseName.length + 1
-				result = (for coll in collections when 'facts_' is coll.name.substring len, len + 5
-					coll.name.slice len + 5
-				)
+			db.collectionNames (err, cl) ->
+				collections = cl
+
+				rename = (row) -> return row.name.split('.').pop()
+				filter = (name) -> return name.slice(0, 6) is 'facts_'
+				trim   = (name) -> return name.slice(6)
+
+				result = cl.map(rename).filter(filter).map(trim)
 
 				result.detailed = (callback) ->
 					iter = (type, next) ->

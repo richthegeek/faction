@@ -16,10 +16,16 @@ module.exports = (stream, config) ->
 		infomapping: InfoMapping_Model
 		fact: Fact_Model
 
-	_mappings = Cache.create 'info-mappings-' + @account, true, (key, next) ->
+	account_name = stream.db.databaseName.replace(/^faction_account_/,'')
+
+	_mappings = Cache.create 'info-mappings-' + account_name, true, (key, next) ->
 		stream.db.collection('info_mappings').find().toArray next
-	_settings = Cache.create 'fact-settings-' + @account, true, (key, next) ->
+
+	_settings = Cache.create 'fact-settings-' + account_name, true, (key, next) ->
 		stream.db.collection('fact_settings').find().toArray next
+
+	_hooks = Cache.create 'hooks-' + account_name, true, (key, next) ->
+		stream.db.collection('hooks').find().toArray next
 
 	return (row, callback) ->
 		self = @
@@ -36,7 +42,7 @@ module.exports = (stream, config) ->
 			fns.push (next) ->
 				new Account_Model () ->
 					self.accountModel = @
-					@load {_id: stream.db.databaseName.replace(/^faction_account_/,'')}, next
+					@load {_id: account_name}, next
 
 		###
 		A sample mapping:
@@ -75,8 +81,9 @@ module.exports = (stream, config) ->
 
 		fns.push (account, skip..., next) -> _mappings.get (err, mappings) -> next err, mappings
 		fns.push (mappings, skip..., next) -> _settings.get (err, settings) -> next err, mappings, settings
+		fns.push (mappings, settings, skip..., next) -> _hooks.get (err, hooks) -> next err, mappings, settings, hooks
 
-		return async.waterfall fns, (err, mappings, settings) =>
+		return async.waterfall fns, (err, mappings, settings, hooks) =>
 			account = @accountModel
 
 			parseMappings = (mapping, next) ->
@@ -120,6 +127,24 @@ module.exports = (stream, config) ->
 						for key, mode of modes when mode is 'delete'
 							delete fact[key]
 
+						fact._updated = new Date
+
+						# send to hooks...
+						data = hooks.map (hook) ->
+							if hook.fact_type isnt row._type
+								return null
+
+							return {
+								hook_id: hook.hook_id,
+								fact_type: hook.fact_type,
+								data: fact
+							}
+						data = data.filter (v) -> v?
+						stream.db.collection('hooks_pending').insert data, () ->
+							console.log 'Hooks', arguments
+
+
+						# delete this stuff just prior to saving...
 						for key of set.foreign_keys
 							delete fact[key]
 

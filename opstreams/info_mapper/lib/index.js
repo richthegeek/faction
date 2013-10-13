@@ -2,7 +2,7 @@
 var __slice = [].slice;
 
 module.exports = function(stream, config) {
-  var Account_Model, Cache, Fact_Model, InfoMapping_Model, async, lib, models, path, _mappings, _settings;
+  var Account_Model, Cache, Fact_Model, InfoMapping_Model, account_name, async, lib, models, path, _hooks, _mappings, _settings;
   async = require('async');
   Cache = require('shared-cache');
   path = require('path');
@@ -16,11 +16,15 @@ module.exports = function(stream, config) {
     infomapping: InfoMapping_Model,
     fact: Fact_Model
   };
-  _mappings = Cache.create('info-mappings-' + this.account, true, function(key, next) {
+  account_name = stream.db.databaseName.replace(/^faction_account_/, '');
+  _mappings = Cache.create('info-mappings-' + account_name, true, function(key, next) {
     return stream.db.collection('info_mappings').find().toArray(next);
   });
-  _settings = Cache.create('fact-settings-' + this.account, true, function(key, next) {
+  _settings = Cache.create('fact-settings-' + account_name, true, function(key, next) {
     return stream.db.collection('fact_settings').find().toArray(next);
+  });
+  _hooks = Cache.create('hooks-' + account_name, true, function(key, next) {
+    return stream.db.collection('hooks').find().toArray(next);
   });
   return function(row, callback) {
     var addShim, evaluate, fns, markForeignFacts, mergeFacts, parseObject, self, _ref,
@@ -37,7 +41,7 @@ module.exports = function(stream, config) {
         return new Account_Model(function() {
           self.accountModel = this;
           return this.load({
-            _id: stream.db.databaseName.replace(/^faction_account_/, '')
+            _id: account_name
           }, next);
         });
       });
@@ -91,7 +95,14 @@ module.exports = function(stream, config) {
         return next(err, mappings, settings);
       });
     });
-    return async.waterfall(fns, function(err, mappings, settings) {
+    fns.push(function() {
+      var mappings, next, settings, skip, _i;
+      mappings = arguments[0], settings = arguments[1], skip = 4 <= arguments.length ? __slice.call(arguments, 2, _i = arguments.length - 1) : (_i = 2, []), next = arguments[_i++];
+      return _hooks.get(function(err, hooks) {
+        return next(err, mappings, settings, hooks);
+      });
+    });
+    return async.waterfall(fns, function(err, mappings, settings, hooks) {
       var account, combineMappings, parseMappings;
       account = _this.accountModel;
       parseMappings = function(mapping, next) {
@@ -140,7 +151,7 @@ module.exports = function(stream, config) {
         set = info.fact.getSettings();
         return info.model["import"](mergeFacts(set, info.fact, info.info), function() {
           return addShim(this.data, account, this.db, this.table, this.type, function(err, fact) {
-            var key, mode, modes, props;
+            var data, key, mode, modes, props;
             modes = set.field_modes;
             for (key in modes) {
               props = modes[key];
@@ -156,6 +167,23 @@ module.exports = function(stream, config) {
                 delete fact[key];
               }
             }
+            fact._updated = new Date;
+            data = hooks.map(function(hook) {
+              if (hook.fact_type !== row._type) {
+                return null;
+              }
+              return {
+                hook_id: hook.hook_id,
+                fact_type: hook.fact_type,
+                data: fact
+              };
+            });
+            data = data.filter(function(v) {
+              return v != null;
+            });
+            stream.db.collection('hooks_pending').insert(data, function() {
+              return console.log('Hooks', arguments);
+            });
             for (key in set.foreign_keys) {
               delete fact[key];
             }

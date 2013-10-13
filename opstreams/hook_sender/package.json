@@ -1,0 +1,11 @@
+{
+	"name": "perform_action",
+	"private": true,
+	"version": "0.0.1",
+	"dependencies": {
+		"request": "*",
+		"shared-cache": "*",
+		"async": "*"
+	},
+	"main": "./lib/index"
+}
