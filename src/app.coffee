@@ -1,5 +1,5 @@
 fs = require 'fs'
-global.restify = require 'restify'
+global.restify = restify = require 'restify'
 crypto = require 'crypto'
 
 global.config = {}
