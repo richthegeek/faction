@@ -19,7 +19,7 @@ module.exports = (req, res, next) ->
 			if err or not loaded or not key
 				return next new restify.InvalidCredentialsError 'Unrecognised public key.'
 
-			if key.secure and not req.query.hash or not req.query.hash.toString().match /^[a-f0-9]{64}/i
+			if key.secure and (not req.query.hash or not req.query.hash.toString().match /^[a-f0-9]{64}/i)
 				return next new restify.InvalidCredentialsError 'This route is authorised, but no request hash been provided in the query string.'
 
 			req.path = req.url.split('?').shift()
