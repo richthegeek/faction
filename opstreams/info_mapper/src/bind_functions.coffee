@@ -1,4 +1,9 @@
 module.exports = (stream, config, row) ->
+
+	operation = stream.operations[0]
+	getColumn = operation.getColumn
+	setColumn = operation.setColumn
+
 	return (data) ->
 		moment = require 'moment'
 		traverse = require 'traverse'
@@ -79,14 +84,15 @@ module.exports = (stream, config, row) ->
 			return value
 
 		bind_iterable = (value) ->
-			value.path = (args...) ->
-				op = stream.operations[0]
-				gc = op.getColumn
+			value.get = (args...) ->
 				args.unshift @
-				r = gc.apply(op, args)
+				r = getColumn.apply operation, args
 				if Array.isArray r
 					r = bind_array r
 				return r
+			value.set = (args...) ->
+				args.unshift @
+				return setColumn.apply operation, args
 
 		traverse(data).forEach (value) ->
 			type = Object::toString.call(value).slice(8, -1)

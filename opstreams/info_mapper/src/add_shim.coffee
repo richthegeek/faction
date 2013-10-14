@@ -36,61 +36,15 @@ module.exports = (stream, config, row) ->
 			settings = (set for set in allSettings when set._id is type).pop() or {}
 			settings.foreign_keys ?= {}
 
-			# copy the key over.
-			fk_arr = []
-			for k, v of settings.foreign_keys
-				settings.foreign_keys[k].key = k
-				settings.foreign_keys[k].autoload ?= false
-				fk_arr.push settings.foreign_keys[k]
-
 			bindFunctions data
 			data.getSettings = () -> settings
-			data.get = (args..., callback) ->
-				console.log 'GET', args
 
-				result = this
+			# load foreign keys
+			fns = for k, fk of settings.foreign_keys
+				do (key, fk) ->
+					fns.push (next) ->
+						loadFK fk, (err, row) ->
+							next err, data.set(key, row)
 
-				# allow arguments to be specified like paths, ie "user/name" as well as arrays
-				args = [].concat.apply [], args.map (arg) -> arg.split /[\.\/]/
-
-				i = 0
-				iter = (arg, next) =>
-					i++
-
-					extract = (obj, cb) =>
-						if typeof obj is 'function'
-							return obj cb
-						cb null, (v for k, v of obj or {})
-
-					if arg is '*'
-						extract result, (err, res) ->
-							next null, result = res
-
-					else if result[arg]?
-						if typeof result[arg] is 'function'
-							return result[arg] (err, res) ->
-								next null, result = res
-						next null, result = result[arg]
-
-					else if i is 1 and settings.foreign_keys[arg]?
-						loadFK.call this, settings.foreign_keys[arg], (err, res) ->
-							next err, result = res
-
-					else if Array.isArray(result)
-						ii = (r, n) -> extract r[arg], n
-						async.map result, ii, (err, res) ->
-							next err, result = [].concat.apply [], res
-
-				async.eachSeries args, iter, (err) -> callback err, result
-
-			loadAutoFKs = (fk, next) =>
-				if fk.autoload isnt true
-					return next()
-
-				loadFK fk, (err, row) =>
-					if row
-						data[fk.key] = row
-					next()
-
-			async.each fk_arr, loadAutoFKs, () =>
+			async.parallel fns, loadFKs, () =>
 				callback null, data

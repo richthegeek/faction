@@ -34,9 +34,6 @@ module.exports = (req, res, next) ->
 			if key.secure and hash isnt req.query.hash
 				return next new restify.InvalidCredentialsError "Request signature did not match. (path = #{hash_parts[0]}, body = #{hash_parts[1]}"
 
-			if key.secure is false
-				console.log 'Bypassing security'
-
 			req.key = key
 			req.account = @
 			delete req.params.key

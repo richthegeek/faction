@@ -26,6 +26,7 @@ server = restify.createServer
 					statusText: body
 
 			data = JSON.stringify body
+			res.bodyData = data
 			res.setHeader 'Content-Length', Buffer.byteLength data
 			return data
 
@@ -54,6 +55,9 @@ server.on 'after', (req, res, route, err) ->
 	req.route ?= {}
 	req.route.path ?= req._path
 	console.log "#{req.method} #{req.route.path} (#{time}ms): #{res.statusCode}"
+
+	if res.statusCode.toString().slice(0,1) isnt '2'
+		console.error res.bodyData
 
 # parse the query string and JSON-body automatically
 server.use restify.queryParser()

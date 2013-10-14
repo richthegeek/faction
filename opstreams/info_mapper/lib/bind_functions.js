@@ -3,6 +3,10 @@ var __hasProp = {}.hasOwnProperty,
   __slice = [].slice;
 
 module.exports = function(stream, config, row) {
+  var getColumn, operation, setColumn;
+  operation = stream.operations[0];
+  getColumn = operation.getColumn;
+  setColumn = operation.setColumn;
   return function(data) {
     var bind_array, bind_iterable, moment, traverse;
     moment = require('moment');
@@ -150,17 +154,21 @@ module.exports = function(stream, config, row) {
       return value;
     };
     bind_iterable = function(value) {
-      return value.path = function() {
-        var args, gc, op, r;
+      value.get = function() {
+        var args, r;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        op = stream.operations[0];
-        gc = op.getColumn;
         args.unshift(this);
-        r = gc.apply(op, args);
+        r = getColumn.apply(operation, args);
         if (Array.isArray(r)) {
           r = bind_array(r);
         }
         return r;
+      };
+      return value.set = function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        args.unshift(this);
+        return setColumn.apply(operation, args);
       };
     };
     traverse(data).forEach(function(value) {
