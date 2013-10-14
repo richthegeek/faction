@@ -6,6 +6,7 @@ module.exports = (server) ->
 	# uses the caching module to keep the list of mappings up to date without always grabbing it.
 	server.post '/info/:info-type', Info_Model.route, (req, res, next) ->
 		mappings = Cache.create 'info-mappings-' + req.account.data._id, true, (key, next) ->
+			console.log 'Cache miss - info-mapping'
 			new Infomapping_Model req.account, () ->
 				@table.find().toArray next
 
