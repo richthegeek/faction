@@ -27,6 +27,11 @@ module.exports = (stream, config) ->
 	_hooks = Cache.create 'hooks-' + account_name, true, (key, next) ->
 		stream.db.collection('hooks').find().toArray next
 
+	s = +new Date
+	t = (args...) ->
+		args.push (+new Date) - s
+		console.log.apply console.log, args
+
 	return (row, callback) ->
 		self = @
 		config.time = row._id.getTimestamp() or new Date
@@ -79,26 +84,25 @@ module.exports = (stream, config) ->
 		 - save, ping any FKs as updated.
 		###
 
-		fns.push (account, skip..., next) -> _mappings.get (err, mappings) -> next err, mappings
+		fns.push (skip..., next) ->_mappings.get (err, mappings) -> next err, mappings
 		fns.push (mappings, skip..., next) -> _settings.get (err, settings) -> next err, mappings, settings
 		fns.push (mappings, settings, skip..., next) -> _hooks.get (err, hooks) -> next err, mappings, settings, hooks
 
 		return async.waterfall fns, (err, mappings, settings, hooks) =>
 			account = @accountModel
+			mappings = mappings.filter (mapping) -> mapping.info_type is row._type
+
+			# t 'start', mappings.length
 
 			parseMappings = (mapping, next) ->
-				if mapping.info_type isnt row._type
-					return next()
-
 				query = _id: evaluate mapping.fact_identifier, {info: row}
-
 				new Fact_Model account, mapping.fact_type, () ->
 					model = @
 					@load query, true, (err, fact = {}) ->
 						if err
 							return next err
 
-						addShim fact, account, @db, @table, @type, (err, fact) ->
+						@addShim (err, fact) ->
 							delete row._type
 							delete row._id if Object::toString.call(row._id) is '[object Object]'
 
@@ -113,56 +117,52 @@ module.exports = (stream, config) ->
 								}
 
 			combineMappings = (info, next) ->
-				set = info.fact.getSettings()
+				set = (s for s in settings when s._id is info.model.type).pop()
+
 				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
-				info.model.import mergeFacts(set, info.fact, info.info), () ->
-					addShim @data, account, @db, @table, @type, (err, fact) ->
+				fact = mergeFacts(set, info.fact, info.info)
 
-						# execute any eval fields of the fact...
-						modes = set.field_modes
-						for key, props of modes when props.eval
-							fact[key] = evaluate props.eval, {fact: fact}
+				info.model.import fact, () ->
+					fact = info.model
+					fact.loadFK () ->
+						fact.updateFields (err, fact) ->
+							# delete any "delete" fields AFTER eval
+							for key, mode of set.field_modes when mode is 'delete'
+								fact.del key
 
-						# delete any "delete" feilds AFTER eval
-						for key, mode of modes when mode is 'delete'
-							delete fact[key]
+							fact.set '_updated', new Date
 
-						fact._updated = new Date
-
-						# send to hooks...
-						data = hooks.map (hook) ->
-							if hook.fact_type isnt row._type
-								return null
-
-							return {
+							# send to hooks...
+							hooks = hooks.filter (hook) -> hook.fact_type is row._type
+							data = hooks.map (hook) ->
 								hook_id: hook.hook_id,
 								fact_type: hook.fact_type,
 								data: fact
-							}
-						data = data.filter (v) -> v?
-						stream.db.collection('hooks_pending').insert data, () ->
-							console.log 'Hooks', arguments
 
+							if data.length > 0
+								stream.db.collection('hooks_pending').insert data, () ->
+									console.log 'Hooks', arguments
 
-						# delete this stuff just prior to saving...
-						for key of set.foreign_keys
-							delete fact[key]
+							# delete this stuff just prior to saving...
+							for key of set.foreign_keys
+								# fact.del key
+								fact.del key
 
-						# save this into the target collection, move on
-						info.model.table.save fact, (err) ->
-							# create additional fact updates for FKs
-							list = (fk for field, fk of set.foreign_keys or {})
+							# save this into the target collection, move on
+							info.model.table.save fact, (err) ->
+								# create additional fact updates for FKs
+								list = (fk for field, fk of set.foreign_keys or {})
 
-							iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
-							async.map list, iter_wrap, (err, updates) ->
-								updates = updates.filter (v) -> v and v.length > 0
-								updates.push {
-									id: fact._id,
-									type: info.mapping.fact_type,
-									time: +new Date
-								}
-								# write to fact_updates
-								next err, updates
+								iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
+								async.map list, iter_wrap, (err, updates) ->
+									updates = updates.filter (v) -> v and v.length > 0
+									updates.push {
+										id: fact._id,
+										type: info.mapping.fact_type,
+										time: +new Date
+									}
+									# write to fact_updates
+									next err, updates
 
 
 			async.map mappings, parseMappings, (err, result) ->

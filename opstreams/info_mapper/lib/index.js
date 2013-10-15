@@ -2,7 +2,7 @@
 var __slice = [].slice;
 
 module.exports = function(stream, config) {
-  var Account_Model, Cache, Fact_Model, InfoMapping_Model, account_name, async, lib, models, path, _hooks, _mappings, _settings;
+  var Account_Model, Cache, Fact_Model, InfoMapping_Model, account_name, async, lib, models, path, s, t, _hooks, _mappings, _settings;
   async = require('async');
   Cache = require('shared-cache');
   path = require('path');
@@ -26,6 +26,13 @@ module.exports = function(stream, config) {
   _hooks = Cache.create('hooks-' + account_name, true, function(key, next) {
     return stream.db.collection('hooks').find().toArray(next);
   });
+  s = +(new Date);
+  t = function() {
+    var args;
+    args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    args.push((+(new Date)) - s);
+    return console.log.apply(console.log, args);
+  };
   return function(row, callback) {
     var addShim, evaluate, fns, markForeignFacts, mergeFacts, parseObject, self, _ref,
       _this = this;
@@ -82,8 +89,8 @@ module.exports = function(stream, config) {
     */
 
     fns.push(function() {
-      var account, next, skip, _i;
-      account = arguments[0], skip = 3 <= arguments.length ? __slice.call(arguments, 1, _i = arguments.length - 1) : (_i = 1, []), next = arguments[_i++];
+      var next, skip, _i;
+      skip = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), next = arguments[_i++];
       return _mappings.get(function(err, mappings) {
         return next(err, mappings);
       });
@@ -105,11 +112,11 @@ module.exports = function(stream, config) {
     return async.waterfall(fns, function(err, mappings, settings, hooks) {
       var account, combineMappings, parseMappings;
       account = _this.accountModel;
+      mappings = mappings.filter(function(mapping) {
+        return mapping.info_type === row._type;
+      });
       parseMappings = function(mapping, next) {
         var query;
-        if (mapping.info_type !== row._type) {
-          return next();
-        }
         query = {
           _id: evaluate(mapping.fact_identifier, {
             info: row
@@ -125,7 +132,7 @@ module.exports = function(stream, config) {
             if (err) {
               return next(err);
             }
-            return addShim(fact, account, this.db, this.table, this.type, function(err, fact) {
+            return this.addShim(function(err, fact) {
               delete row._type;
               if (Object.prototype.toString.call(row._id) === '[object Object]') {
                 delete row._id;
@@ -147,71 +154,76 @@ module.exports = function(stream, config) {
         });
       };
       combineMappings = function(info, next) {
-        var set;
-        set = info.fact.getSettings();
-        return info.model["import"](mergeFacts(set, info.fact, info.info), function() {
-          return addShim(this.data, account, this.db, this.table, this.type, function(err, fact) {
-            var data, key, mode, modes, props;
-            modes = set.field_modes;
-            for (key in modes) {
-              props = modes[key];
-              if (props["eval"]) {
-                fact[key] = evaluate(props["eval"], {
-                  fact: fact
-                });
-              }
+        var fact, set;
+        set = ((function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = settings.length; _i < _len; _i++) {
+            s = settings[_i];
+            if (s._id === info.model.type) {
+              _results.push(s);
             }
-            for (key in modes) {
-              mode = modes[key];
-              if (mode === 'delete') {
-                delete fact[key];
-              }
-            }
-            fact._updated = new Date;
-            data = hooks.map(function(hook) {
-              if (hook.fact_type !== row._type) {
-                return null;
-              }
-              return {
-                hook_id: hook.hook_id,
-                fact_type: hook.fact_type,
-                data: fact
-              };
-            });
-            data = data.filter(function(v) {
-              return v != null;
-            });
-            stream.db.collection('hooks_pending').insert(data, function() {
-              return console.log('Hooks', arguments);
-            });
-            for (key in set.foreign_keys) {
-              delete fact[key];
-            }
-            return info.model.table.save(fact, function(err) {
-              var field, fk, iter_wrap, list;
-              list = (function() {
-                var _ref1, _results;
-                _ref1 = set.foreign_keys || {};
-                _results = [];
-                for (field in _ref1) {
-                  fk = _ref1[field];
-                  _results.push(fk);
+          }
+          return _results;
+        })()).pop();
+        fact = mergeFacts(set, info.fact, info.info);
+        return info.model["import"](fact, function() {
+          fact = info.model;
+          return fact.loadFK(function() {
+            return fact.updateFields(function(err, fact) {
+              var data, key, mode, _ref1;
+              _ref1 = set.field_modes;
+              for (key in _ref1) {
+                mode = _ref1[key];
+                if (mode === 'delete') {
+                  fact.del(key);
                 }
-                return _results;
-              })();
-              iter_wrap = function(fk, next) {
-                return markForeignFacts(fk, fact, next);
-              };
-              return async.map(list, iter_wrap, function(err, updates) {
-                updates = updates.filter(function(v) {
-                  return v && v.length > 0;
+              }
+              fact.set('_updated', new Date);
+              hooks = hooks.filter(function(hook) {
+                return hook.fact_type === row._type;
+              });
+              data = hooks.map(function(hook) {
+                return {
+                  hook_id: hook.hook_id,
+                  fact_type: hook.fact_type,
+                  data: fact
+                };
+              });
+              if (data.length > 0) {
+                stream.db.collection('hooks_pending').insert(data, function() {
+                  return console.log('Hooks', arguments);
                 });
-                updates.push({
-                  id: fact._id,
-                  type: info.mapping.fact_type,
-                  time: +(new Date)
+              }
+              for (key in set.foreign_keys) {
+                fact.del(key);
+              }
+              return info.model.table.save(fact, function(err) {
+                var field, fk, iter_wrap, list;
+                list = (function() {
+                  var _ref2, _results;
+                  _ref2 = set.foreign_keys || {};
+                  _results = [];
+                  for (field in _ref2) {
+                    fk = _ref2[field];
+                    _results.push(fk);
+                  }
+                  return _results;
+                })();
+                iter_wrap = function(fk, next) {
+                  return markForeignFacts(fk, fact, next);
+                };
+                return async.map(list, iter_wrap, function(err, updates) {
+                  updates = updates.filter(function(v) {
+                    return v && v.length > 0;
+                  });
+                  updates.push({
+                    id: fact._id,
+                    type: info.mapping.fact_type,
+                    time: +(new Date)
+                  });
+                  return next(err, updates);
                 });
-                return next(err, updates);
               });
             });
           });

@@ -29,8 +29,9 @@ module.exports = (server) ->
 
 	# retrieve a specific fact by ID
 	server.get '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->
-		req.model.load {_id: req.params['fact-id']}, ErrorHandler next, () ->
-			res.send @export()
+		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, () ->
+			@updateFields () ->
+				res.send @export()
 
 	# update a fact by ID.
 	server.post '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->
