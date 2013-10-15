@@ -96,6 +96,10 @@ module.exports = (stream, config) ->
 
 			parseMappings = (mapping, next) ->
 				query = _id: evaluate mapping.fact_identifier, {info: row}
+
+				if not query._id?
+					return next()
+
 				new Fact_Model account, mapping.fact_type, () ->
 					model = @
 					@load query, true, (err, fact = {}) ->

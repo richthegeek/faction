@@ -122,6 +122,9 @@ module.exports = function(stream, config) {
             info: row
           })
         };
+        if (query._id == null) {
+          return next();
+        }
         return new Fact_Model(account, mapping.fact_type, function() {
           var model;
           model = this;
