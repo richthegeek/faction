@@ -5,6 +5,7 @@ module.exports = (server) ->
 	# post information of a specific type
 	# uses the caching module to keep the list of mappings up to date without always grabbing it.
 	server.post '/info/:info-type', Info_Model.route, (req, res, next) ->
+		req.logTime 'routeStart'
 		mappings = Cache.create 'info-mappings-' + req.account.data._id, true, (key, next) ->
 			console.log 'Cache miss - info-mapping'
 			new Infomapping_Model req.account, () ->
@@ -14,6 +15,7 @@ module.exports = (server) ->
 			if err then return next err
 
 			mappings.get ErrorHandler next, (err, list, hit) ->
+				req.logTime 'Complete'
 				res.send {
 					status: 'ok',
 					statusText: 'Information recieved',

@@ -30,6 +30,14 @@ server = restify.createServer
 			res.setHeader 'Content-Length', Buffer.byteLength data
 			return data
 
+server.use (req, res, next) ->
+	req.logTime = req.logTime = (args...) ->
+		args.unshift (+new Date) - req.time()
+		console.log.apply console.log, args
+
+	req.logTime('start')
+	next()
+
 global.ErrorHandler = (next, good) ->
 	return (err) ->
 		if err
@@ -84,6 +92,9 @@ server.use (req, res, next) ->
 				name = name.replace /[^a-z0-9_]+/ig, '_'
 				ret[name] = val
 		return ret
+
+	req.logTime 'preAuth'
+
 	next()
 
 # load models and routes automatically.
