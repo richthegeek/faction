@@ -30,14 +30,6 @@ server = restify.createServer
 			res.setHeader 'Content-Length', Buffer.byteLength data
 			return data
 
-server.use (req, res, next) ->
-	req.logTime = req.logTime = (args...) ->
-		args.unshift (+new Date) - req.time()
-		console.log.apply console.log, args
-
-	req.logTime('start')
-	next()
-
 global.ErrorHandler = (next, good) ->
 	return (err) ->
 		if err
@@ -67,15 +59,27 @@ server.on 'after', (req, res, route, err) ->
 	if res.statusCode.toString().slice(0,1) isnt '2'
 		console.error res.bodyData
 
+
+server.use (req, res, next) ->
+	req.logTime = req.logTime = (args...) ->
+		args.unshift (+new Date) - req.time()
+		console.log.apply console.log, args
+	next()
+
 # parse the query string and JSON-body automatically
+server.use (rq, rs, n) -> next null, req.logTime('pre-QueryParser')
 server.use restify.queryParser()
+server.use (rq, rs, n) -> next null, req.logTime('post-QueryParser')
 server.use (req, res, next) -> next null, req.headers['content-type'] = 'application/json'
+server.use (rq, rs, n) -> next null, req.logTime('post-header')
 server.use restify.bodyParser mapParams: false, requestBodyOnGet: true
+server.use (rq, rs, n) -> next null, req.logTime('post-bodyParser')
 
 # use req.body in GET methods
 server.use (req, res, next) ->
 	if req.method is 'GET' and req.params.body
 		req.body = JSON.parse req.params.body
+	req.logTime 'post req.body parse'
 	next()
 
 server.use (req, res, next) ->

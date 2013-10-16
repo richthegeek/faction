@@ -10,13 +10,10 @@ module.exports = (req, res, next) ->
 	# 2: check for a key in that account where public is the same as req.query.key
 	# 3: create HMAC using that key's private value
 	# 4: compare and authorise if they are the same.
-	req.logTime 'HMAC start'
 	new Account_Model () ->
 		id = req.query.key.substring(0, 16)
 		#1
-		req.logTime 'HMAC 1'
 		@load {_id: id}, (err, loaded) ->
-			req.logTime 'HMAC 2'
 			key = (key for name, key of (@data.keys or {}) when key.public is req.query.key).pop()
 
 			if err or not loaded or not key
@@ -32,9 +29,7 @@ module.exports = (req, res, next) ->
 				JSON.stringify(req.body or {})
 				key.private
 			]
-			req.logTime 'HMAC 3'
 			hash = require('crypto').createHash('sha256').update(hash_parts.join('')).digest('hex')
-			req.logTime 'HMAC 4'
 
 			if key.secure and hash isnt req.query.hash
 				return next new restify.InvalidCredentialsError "Request signature did not match. (path = #{hash_parts[0]}, body = #{hash_parts[1]}"
@@ -44,7 +39,6 @@ module.exports = (req, res, next) ->
 			delete req.params.key
 			delete req.params.hash
 
-			req.logTime 'HMAC 5'
 			# key.endpoint regular-expression limiting.
 			text = req.method.toUpperCase() + ' ' + req.path
 			while key.parent
@@ -53,6 +47,4 @@ module.exports = (req, res, next) ->
 				if key.endpoints.length > 0 and (1 for regex in key.endpoints when new RegExp('^' + regex).test(text)).length is 0
 					return next restify.InvalidCredentialsError "Request is not allowed using this key due to endpoint restriction."
 				key = req.account.data.keys[key.parent] or {parent: null}
-
-			req.logTime 'HMAC complete'
 			return next()
