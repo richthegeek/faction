@@ -67,13 +67,13 @@ server.use (req, res, next) ->
 	next()
 
 # parse the query string and JSON-body automatically
-server.use (rq, rs, n) -> next null, req.logTime('pre-QueryParser')
+server.use (rq, rs, n) -> n null, rq.logTime('pre-QueryParser')
 server.use restify.queryParser()
-server.use (rq, rs, n) -> next null, req.logTime('post-QueryParser')
+server.use (rq, rs, n) -> n null, rq.logTime('post-QueryParser')
 server.use (req, res, next) -> next null, req.headers['content-type'] = 'application/json'
-server.use (rq, rs, n) -> next null, req.logTime('post-header')
+server.use (rq, rs, n) -> n null, rq.logTime('post-header')
 server.use restify.bodyParser mapParams: false, requestBodyOnGet: true
-server.use (rq, rs, n) -> next null, req.logTime('post-bodyParser')
+server.use (rq, rs, n) -> n null, rq.logTime('post-bodyParser')
 
 # use req.body in GET methods
 server.use (req, res, next) ->
