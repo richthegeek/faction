@@ -75,7 +75,6 @@ server.use restify.bodyParser mapParams: false, requestBodyOnGet: true
 server.use (req, res, next) ->
 	if req.method is 'GET' and req.params.body
 		req.body = JSON.parse req.params.body
-	req.logTime 'post req.body parse'
 	next()
 
 server.use (req, res, next) ->
