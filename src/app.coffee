@@ -30,12 +30,11 @@ server = restify.createServer
 			res.setHeader 'Content-Length', Buffer.byteLength data
 			return data
 
-global.ErrorHandler = (next, good) ->
-	return (err) ->
-		if err
-			next new Error err
-		else
-			next good.apply this, arguments
+# error handler, used by plenty of things
+global.ErrorHandler = (next, good) -> (err) ->
+	if err
+		return next new Error err
+	next good.apply this, arguments
 
 # handle errors that are produced by Exceptions.
 # this makes it easier to produce errors in routes.
@@ -60,6 +59,11 @@ server.on 'after', (req, res, route, err) ->
 		console.error res.bodyData
 
 
+# CORS
+server.use restify.CORS()
+server.use restify.fullResponse()
+
+# time logging
 server.use (req, res, next) ->
 	req.logTime = req.logTime = (args...) ->
 		args.unshift (+new Date) - req.time()
@@ -91,8 +95,6 @@ server.use (req, res, next) ->
 				name = name.replace /[^a-z0-9_]+/ig, '_'
 				ret[name] = val
 		return ret
-
-	req.logTime 'preAuth'
 
 	next()
 

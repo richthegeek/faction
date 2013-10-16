@@ -37,6 +37,8 @@ module.exports = (server) ->
 		keyname = req.params['key-name']
 		req.body.parent ?= req.account.data.keys[keyname]?.parent or req.key.name
 
+		console.log 'UPDATE', keyname
+
 		if req.account.data.keys[keyname]? and not req.body.refresh?
 			# only update "parent" to one we own.
 			if parent = req.body.parent
