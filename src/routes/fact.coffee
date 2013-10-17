@@ -33,6 +33,15 @@ module.exports = (server) ->
 			@updateFields () ->
 				res.send @export()
 
+	# retrieve a specific fact by ID
+	server.get '/facts/:fact-type/fact_def/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
+		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, () ->
+
+			self = @
+			@data.get 'devices[0].sessions', () =>
+				next res.send @export()
+
+
 	# update a fact by ID.
 	server.post '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->
 		req.body._id = req.params['fact-id']

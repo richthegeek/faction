@@ -114,9 +114,13 @@ for name, model of files.models
 	name = name.slice(0,1).toUpperCase() + name.slice(1) + '_Model'
 	global[name] = model
 
+
 for group, fn of files.routes
 	fn server
+server.use (req, res, next) ->
+	console.log 'Am i dancer?'
 
 # listen on the configured port.
 console.log 'Listening on', config.port
+
 server.listen config.port

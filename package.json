@@ -8,7 +8,8 @@
 		"async": "*",
 		"contextify": "*",
 		"moment": "*",
-		"shared-cache": "*"
+		"shared-cache": "*",
+		"deferred-object": "*"
 	},
 	"scripts": {
 		"start": "node ./lib/app",
