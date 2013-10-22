@@ -1,11 +1,20 @@
 {
-	"name": "perform_action",
+	"name": "hook_sender",
 	"private": true,
 	"version": "0.0.1",
 	"dependencies": {
 		"request": "*",
 		"shared-cache": "*",
-		"async": "*"
+		"async": "*",
+		"soap": "9point6/node-soap",
+		"underscore": "*"
+	},
+	"devDependencies": {
+		"mocha": "~1.13.0"
+	},
+	"scripts": {
+		"test": "make test"
 	},
 	"main": "./lib/index"
 }
+
