@@ -3,6 +3,8 @@ Model = require './model'
 Cache = require 'shared-cache'
 DeferredObject = require 'deferred-object'
 
+wrapArray = require '../lib/wrapArray'
+
 module.exports = class Fact_deferred_Model extends Model
 
 	constructor: (@account, @type, callback) ->
@@ -41,25 +43,22 @@ module.exports = class Fact_deferred_Model extends Model
 		self = @
 
 		super query, (err, row, query) ->
+			if err or not row
+				return callback err, row
+
 			@data = new DeferredObject @data
 			@getSettings (err, settings) =>
 				for key, props of settings.foreign_keys or {}
-					do (key, props) =>
-						@data.defer key, (data, next) =>
-							Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
-								new Fact_deferred_Model self.account, props.fact_type, () ->
-									if props.has is 'one' or query._id?
-										@load query, next
-									else
-										@loadAll query, next
+					@data.defer key, (key, data, next) =>
+						props = settings.foreign_keys[key]
+						Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
+							new Fact_deferred_Model self.account, props.fact_type, () ->
+								if props.has is 'one' or query._id?
+									@load query, next
+								else
+									@loadAll query, next
 
 				callback.call @, err, @data, query
-
-			# if row and withFK isnt false
-			# 	@loadFK withFK, (data) =>
-			# 		callback.call @, err, @data, query
-			# else
-			# 	callback.apply @, err, @data, query
 
 	loadAll: (query, withFK, callback) ->
 		args = Array::slice.call(arguments, 1)
@@ -71,46 +70,8 @@ module.exports = class Fact_deferred_Model extends Model
 				@_spawn () ->
 					@load {_id: row._id}, withFK, next
 
-			async.map ids, loader, () ->
-				callback.apply @, arguments
-
-	loadFK: (chain, callback) ->
-		args = Array::slice.call arguments
-		callback = args.pop()
-		chain = args.pop()
-		self = @
-
-		if not Array.isArray chain
-			chain = []
-		chain.push self
-
-		@getSettings (err, settings) ->
-			if err or not settings or not settings.foreign_keys
-				return callback()
-
-			fks = ([key, fk] for key, fk of settings.foreign_keys)
-
-			# load each foreign key in these settings.
-			loadFK = (arr, next) ->
-				[key, fk] = arr
-
-				for item in chain when item.type is fk.fact_type
-					return next()
-
-				cb = (err, data) ->
-					self.data[key] = data
-					next()
-
-				Fact_deferred_Model.parseObject fk.query, {fact: self.data}, (query) =>
-					new Fact_deferred_Model self.account, fk.fact_type, () ->
-						if fk.has is 'one' or query._id?
-							@load query, chain, cb #(err) -> cb err, @data
-						else
-							@loadAll query, chain, cb #(err, data) -> cb err, data
-
-			async.each fks, loadFK, () ->
-				callback()
-
+			async.map ids, loader, (err, rows) ->
+				callback.call @, err, wrapArray rows
 
 	addShim: (callback) ->
 		path = require('path').resolve(__dirname, '../../opstreams/info_mapper/lib/add_shim')
