@@ -30,12 +30,11 @@ server = restify.createServer
 			res.setHeader 'Content-Length', Buffer.byteLength data
 			return data
 
-global.ErrorHandler = (next, good) ->
-	return (err) ->
-		if err
-			next new Error err
-		else
-			next good.apply this, arguments
+# error handler, used by plenty of things
+global.ErrorHandler = (next, good) -> (err) ->
+	if err
+		return next new Error err
+	next good.apply this, arguments
 
 # handle errors that are produced by Exceptions.
 # this makes it easier to produce errors in routes.
@@ -58,6 +57,18 @@ server.on 'after', (req, res, route, err) ->
 
 	if res.statusCode.toString().slice(0,1) isnt '2'
 		console.error res.bodyData
+
+
+# CORS
+server.use restify.CORS()
+server.use restify.fullResponse()
+
+# time logging
+server.use (req, res, next) ->
+	req.logTime = req.logTime = (args...) ->
+		args.unshift (+new Date) - req.time()
+		console.log.apply console.log, args
+	next()
 
 # parse the query string and JSON-body automatically
 server.use restify.queryParser()
@@ -84,6 +95,7 @@ server.use (req, res, next) ->
 				name = name.replace /[^a-z0-9_]+/ig, '_'
 				ret[name] = val
 		return ret
+
 	next()
 
 # load models and routes automatically.
@@ -102,9 +114,13 @@ for name, model of files.models
 	name = name.slice(0,1).toUpperCase() + name.slice(1) + '_Model'
 	global[name] = model
 
+
 for group, fn of files.routes
 	fn server
+server.use (req, res, next) ->
+	console.log 'Am i dancer?'
 
 # listen on the configured port.
 console.log 'Listening on', config.port
+
 server.listen config.port

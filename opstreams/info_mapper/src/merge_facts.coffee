@@ -1,5 +1,8 @@
 module.exports = (stream, config, row) ->
 	xtend = require 'xtend'
+
+	{getColumn, setColumn, deleteColumn} = require('./column_ops')()
+
 	return (settings, old_fact, mid_fact) ->
 		new_fact = xtend old_fact, mid_fact
 
@@ -23,19 +26,20 @@ module.exports = (stream, config, row) ->
 							# these two are the same.
 							list[j] = false
 
-				new_fact[field] = list.filter (v) -> !! v
+
+				setColumn new_fact, field, list.filter (v) -> !! v
 
 			if mode is 'oldest'
-				new_fact[field] = old_fact[field] or mid_fact[field]
+				setColumn new_fact, field, old_fact[field] ? mid_fact[field]
 
 			if mode is 'min'
 				a = Number(mid_fact[field]) or Math.min()
 				b = Number(old_fact[field]) or Math.min()
-				new_fact[field] = Math.min a, b
+				setColumn new_fact, field, Math.min a, b
 
 			if mode is 'max'
 				a = Number(mid_fact[field]) or Math.max()
 				b = Number(old_fact[field]) or Math.max()
-				new_fact[field] = Math.max a, b
+				setColumn new_fact, field, Math.max a, b
 
 		return new_fact

@@ -1,4 +1,3 @@
-check = require('validator').check
 crypto = require 'crypto'
 Model = require './model'
 Cache = require 'shared-cache'

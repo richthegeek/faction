@@ -1,8 +1,6 @@
 module.exports = (stream, config, row) ->
 
-	operation = stream.operations[0]
-	getColumn = operation.getColumn
-	setColumn = operation.setColumn
+	{getColumn, setColumn, deleteColumn} = require('./column_ops')()
 
 	return (data) ->
 		moment = require 'moment'
@@ -85,14 +83,18 @@ module.exports = (stream, config, row) ->
 
 		bind_iterable = (value) ->
 			value.get = (args...) ->
-				args.unshift @
-				r = getColumn.apply operation, args
+				args = args.join '.'
+				r = getColumn @, args
 				if Array.isArray r
 					r = bind_array r
 				return r
-			value.set = (args...) ->
-				args.unshift @
-				return setColumn.apply operation, args
+
+			value.set = (col, val) ->
+				return setColumn @, col, val
+
+			value.del = (col) ->
+				return deleteColumn @, col
+
 
 		traverse(data).forEach (value) ->
 			type = Object::toString.call(value).slice(8, -1)

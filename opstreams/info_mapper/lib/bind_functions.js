@@ -3,10 +3,8 @@ var __hasProp = {}.hasOwnProperty,
   __slice = [].slice;
 
 module.exports = function(stream, config, row) {
-  var getColumn, operation, setColumn;
-  operation = stream.operations[0];
-  getColumn = operation.getColumn;
-  setColumn = operation.setColumn;
+  var deleteColumn, getColumn, setColumn, _ref;
+  _ref = require('./column_ops')(), getColumn = _ref.getColumn, setColumn = _ref.setColumn, deleteColumn = _ref.deleteColumn;
   return function(data) {
     var bind_array, bind_iterable, moment, traverse;
     moment = require('moment');
@@ -48,8 +46,8 @@ module.exports = function(stream, config, row) {
         };
         value.betweenDates = function(start, end) {
           return bind_array(this.filter(function(item) {
-            var _ref;
-            return (new Date(start) <= (_ref = new Date(item._date || new Date())) && _ref <= new Date(end));
+            var _ref1;
+            return (new Date(start) <= (_ref1 = new Date(item._date || new Date())) && _ref1 <= new Date(end));
           }));
         };
       }
@@ -57,8 +55,8 @@ module.exports = function(stream, config, row) {
         return bind_array(this.filter(function(v) {
           return typeof v !== 'function';
         }).map(function(v) {
-          var _ref;
-          v = (_ref = v._value) != null ? _ref : v;
+          var _ref1;
+          v = (_ref1 = v._value) != null ? _ref1 : v;
           return column && v[column] || v;
         }));
       };
@@ -157,18 +155,18 @@ module.exports = function(stream, config, row) {
       value.get = function() {
         var args, r;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        args.unshift(this);
-        r = getColumn.apply(operation, args);
+        args = args.join('.');
+        r = getColumn(this, args);
         if (Array.isArray(r)) {
           r = bind_array(r);
         }
         return r;
       };
-      return value.set = function() {
-        var args;
-        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        args.unshift(this);
-        return setColumn.apply(operation, args);
+      value.set = function(col, val) {
+        return setColumn(this, col, val);
+      };
+      return value.del = function(col) {
+        return deleteColumn(this, col);
       };
     };
     traverse(data).forEach(function(value) {

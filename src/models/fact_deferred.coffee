@@ -1,8 +1,9 @@
 async = require 'async'
 Model = require './model'
 Cache = require 'shared-cache'
+DeferredObject = require 'deferred-object'
 
-module.exports = class Fact_Model extends Model
+module.exports = class Fact_deferred_Model extends Model
 
 	constructor: (@account, @type, callback) ->
 		@type = type.replace(/[^a-z0-9_]+/g, '_').substring(0, 60)
@@ -18,13 +19,19 @@ module.exports = class Fact_Model extends Model
 
 	@route = (req, res, next) ->
 		if req.params['fact-type']
-			new Fact_Model req.account, req.params['fact-type'], () ->
+			new Fact_deferred_Model req.account, req.params['fact-type'], () ->
 				req.model = @
 				next()
 		else next()
 
 	removeFull: (callback) ->
 		@table.drop callback
+
+
+	export: ->
+		if @data.data
+			return @data.data
+		return @data
 
 	load: (query, withFK, callback) ->
 		args = Array::slice.call(arguments, 1)
@@ -34,11 +41,25 @@ module.exports = class Fact_Model extends Model
 		self = @
 
 		super query, (err, row, query) ->
-			if row and withFK isnt false
-				@loadFK withFK, (data) =>
-					callback.call @, err, @data, query
-			else
-				callback.apply @, err, @data, query
+			@data = new DeferredObject @data
+			@getSettings (err, settings) =>
+				for key, props of settings.foreign_keys or {}
+					do (key, props) =>
+						@data.defer key, (data, next) =>
+							Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
+								new Fact_deferred_Model self.account, props.fact_type, () ->
+									if props.has is 'one' or query._id?
+										@load query, next
+									else
+										@loadAll query, next
+
+				callback.call @, err, @data, query
+
+			# if row and withFK isnt false
+			# 	@loadFK withFK, (data) =>
+			# 		callback.call @, err, @data, query
+			# else
+			# 	callback.apply @, err, @data, query
 
 	loadAll: (query, withFK, callback) ->
 		args = Array::slice.call(arguments, 1)
@@ -50,7 +71,8 @@ module.exports = class Fact_Model extends Model
 				@_spawn () ->
 					@load {_id: row._id}, withFK, next
 
-			async.map ids, loader, callback
+			async.map ids, loader, () ->
+				callback.apply @, arguments
 
 	loadFK: (chain, callback) ->
 		args = Array::slice.call arguments
@@ -79,8 +101,8 @@ module.exports = class Fact_Model extends Model
 					self.data[key] = data
 					next()
 
-				Fact_Model.parseObject fk.query, {fact: self.data}, (query) =>
-					new Fact_Model self.account, fk.fact_type, () ->
+				Fact_deferred_Model.parseObject fk.query, {fact: self.data}, (query) =>
+					new Fact_deferred_Model self.account, fk.fact_type, () ->
 						if fk.has is 'one' or query._id?
 							@load query, chain, cb #(err) -> cb err, @data
 						else
@@ -99,7 +121,7 @@ module.exports = class Fact_Model extends Model
 		@addShim (err, fact) =>
 			@getSettings (err, settings) =>
 				for key, props of settings.field_modes when props.eval
-					result = Fact_Model.evaluate props.eval, {fact: fact}
+					result = Fact_deferred_Model.evaluate props.eval, {fact: fact}
 					fact.set key, result
 
 				@data = fact
@@ -129,7 +151,7 @@ module.exports = class Fact_Model extends Model
 
 				result.detailed = (callback) ->
 					iter = (type, next) ->
-						new Fact_Model account, type, () ->
+						new Fact_deferred_Model account, type, () ->
 							@table.count (err, size) ->
 								next err, {
 									fact_type: type,
@@ -146,7 +168,7 @@ module.exports = class Fact_Model extends Model
 				callback err, result
 
 
-Fact_Model.evaluate = (str, context, callback) ->
+Fact_deferred_Model.evaluate = (str, context, callback) ->
 	context.isAsync = false
 	context.async = (val = true) -> context.isAsync = val
 	context.complete = (err, str) ->
@@ -169,9 +191,9 @@ Fact_Model.evaluate = (str, context, callback) ->
 ###
 interpolate: evaluate demarcated sections of a string
 ###
-Fact_Model.interpolate = (str, context, callback) ->
+Fact_deferred_Model.interpolate = (str, context, callback) ->
 	(str.match(/\#\{.+?\}/g) or []).forEach (section) =>
-		str = str.replace section, Fact_Model.evaluate section.slice(2, -1), context
+		str = str.replace section, Fact_deferred_Model.evaluate section.slice(2, -1), context
 	return str
 
 ###
@@ -181,13 +203,13 @@ parseObject: evaluate the object with this context, interpolating keys and evalu
 	Into this:
 		"orders": {oid: 42, value: 400}, "orders_42_value": 400
 ###
-Fact_Model.parseObject = (obj, context, callback) ->
+Fact_deferred_Model.parseObject = (obj, context, callback) ->
 	# interpolate keys
 	obj = JSON.parse (JSON.stringify obj), (key, value) =>
 		if Object::toString.call(value) is '[object Object]'
 			for k, v of value
 				delete value[k]
-				k = Fact_Model.interpolate k, context
+				k = Fact_deferred_Model.interpolate k, context
 				value[k] = v
 		return value
 
@@ -200,7 +222,7 @@ Fact_Model.parseObject = (obj, context, callback) ->
 			nodes.push @
 
 	iter = (node, next) =>
-		Fact_Model.evaluate node.value, context, (err, newval) =>
+		Fact_deferred_Model.evaluate node.value, context, (err, newval) =>
 			next err, node.update newval, true
 
 	async.each nodes, iter, () -> callback obj
