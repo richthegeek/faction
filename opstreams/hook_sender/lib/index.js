@@ -84,26 +84,30 @@
             time: new Date
           });
         };
-        if (hook.type != null) {
-          hookService = require("./types/" + hook.type);
-          if (hook.type === 'copernica') {
+        if (hook.type == null) {
+          hook.type = 'url';
+        }
+        switch (hook.type) {
+          case 'url':
             options = {
-              'credentials': {
-                'username': 'pk@ltl.uk.com',
-                'password': 'OpenWeek!!',
-                'account': 'Elliot UK'
-              },
-              'database': 'Master'
+              method: 'POST',
+              uri: hook.url,
+              json: row.data
             };
-          }
-          return hookService.exec(options, row.data, cb);
-        } else {
-          options = {
-            method: 'POST',
-            uri: hook.url,
-            json: row.data
-          };
-          return request.post(options, cb);
+            return request.post(options, cb);
+          default:
+            hookService = require("./types/" + hook.type);
+            if (hook.type === 'copernica') {
+              options = {
+                'credentials': {
+                  'username': 'pk@ltl.uk.com',
+                  'password': 'OpenWeek!!',
+                  'account': 'Elliot UK'
+                },
+                'database': 'Master'
+              };
+            }
+            return hookService.exec(options, row.data, cb);
         }
       });
     };

@@ -65,25 +65,27 @@ module.exports = (stream, config, row) ->
 					time: new Date
 				}
 
-			if hook.type?
-				# TODO: make this way more clever
-				hookService = require "./types/#{hook.type}"
-
-				# TODO: less hardcoded way
-				if hook.type is 'copernica'
+			hook.type ?= 'url'
+			switch hook.type
+				when 'url'
 					options =
-						'credentials':
-							'username': 'pk@ltl.uk.com'
-							'password': 'OpenWeek!!'
-							'account': 'Elliot UK'
-						'database': 'Master'
+						method: 'POST'
+						uri: hook.url,
+						json: row.data
 
-				hookService.exec options, row.data, cb
-			else
-				options =
-					method: 'POST'
-					uri: hook.url,
-					json: row.data
+					# try send the data...
+					request.post options, cb
+				else
+					# TODO: make this way more clever
+					hookService = require "./types/#{hook.type}"
 
-				# try send the data...
-				request.post options, cb
+					# TODO: less hardcoded way
+					if hook.type is 'copernica'
+						options =
+							'credentials':
+								'username': 'pk@ltl.uk.com'
+								'password': 'OpenWeek!!'
+								'account': 'Elliot UK'
+							'database': 'Master'
+
+					hookService.exec options, row.data, cb
