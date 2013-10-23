@@ -119,10 +119,12 @@
         'index': true
       },
       'visit_id': {
-        'type': 'integer',
-        'value': 0,
+        'type': 'text',
+        'value': '',
         'display': true,
         'ordered': false,
+        'length': 50,
+        'textlines': 1,
         'hidden': false,
         'index': true
       },
@@ -189,10 +191,12 @@
         'index': true
       },
       'FillID': {
-        'type': 'integer',
-        'value': 0,
+        'type': 'text',
+        'value': '',
         'display': true,
         'ordered': false,
+        'length': 50,
+        'textlines': 1,
         'hidden': false,
         'index': true
       }
@@ -218,10 +222,12 @@
         'empty': true
       },
       'DownloadID': {
-        'type': 'integer',
-        'value': 0,
+        'type': 'text',
+        'value': '',
         'display': true,
         'ordered': false,
+        'length': 50,
+        'textlines': 1,
         'hidden': false,
         'index': true
       },
@@ -724,16 +730,14 @@
           return new Copernica_Base(options, next);
         }, getCurrentCollections = function(copernica, next) {
           return copernica.getCollections(function(err, currentCollections) {
-            console.log(err, currentCollections);
             return next(err, currentCollections, copernica);
           });
         }, addMissingCollections = function(currentCollections, copernica, next1) {
-          return console.log(currentCollections);
           return async.map(Object.keys(collections), (function(collectionName, next2) {
             var createCollection, createFields, row, _i, _len;
             for (_i = 0, _len = currentCollections.length; _i < _len; _i++) {
               row = currentCollections[_i];
-              if (collectionName === row.name) {
+              if (collectionName === (row != null ? row.name : void 0)) {
                 return next2(null);
               }
             }
@@ -743,53 +747,121 @@
               }, createFields = function(collection, next3) {
                 var fields;
                 fields = collections[collectionName];
-                return async.map(fields, (function(fieldName, next4) {
+                return async.map(Object.keys(fields), (function(fieldName, next4) {
                   var params;
                   params = fields[fieldName];
                   params.name = fieldName;
                   params.id = collection.id;
-                  return copernica.createField(params, next4);
+                  return copernica.createCollectionField(params, next4);
                 }), next3);
               }
             ], next2);
-          }), next1);
+          }), function(err, results) {
+            return next1(err, results, copernica);
+          });
         }
-      ], function(err, results) {
-        return callback(err);
-      });
+      ], callback);
     },
     'exec': function(options, data, callback) {
+      data = [].concat(data);
       return async.map(data, (function(profile, next) {
-        var addSessions, loadCopernica, updateProfile;
+        var addSessions, getCollections, loadCopernica, updateProfile;
         return async.waterfall([
           loadCopernica = function(next1) {
             var copProfile;
             return copProfile = new Copernica_Profile(options, next1);
-          }, updateProfile = function(obj, next1) {
-            return obj.profile({
-              'user_id': profile._id,
-              'email': profile.email
-            }, {
-              'score': profile.score,
-              'name': profile.name
-            }, next1);
-          }, addSessions = function(obj, next1) {
+          }, updateProfile = function(copernica, next1) {
+            var data_fields, id_fields;
+            id_fields = {
+              'uid': profile._id,
+              'Email': profile.email
+            };
+            data_fields = {
+              'LeadScore': profile.score
+            };
+            return copernica.profile(id_fields, data_fields, next1);
+          }, getCollections = function(copernica, next1) {
+            return copernica.getCollections(function(err, collections) {
+              return next1(err, copernica, collections);
+            });
+          }, addSessions = function(copernica, collections, next1) {
+            var collectionsMap, i, row;
+            collectionsMap = {};
+            for (i in collections) {
+              row = collections[i];
+              collectionsMap[row.name] = i;
+            }
             return async.map(profile.devices, (function(device, next2) {
               return async.map(device.sessions, (function(session, next3) {
-                return obj.subprofile({
-                  'session_id': session._id
-                }, {
-                  'did': session.did({
-                    'actions': session.actions
-                  })
-                }, next3);
+                var pvid;
+                pvid = 0;
+                return async.map(session.actions, (function(action, next4) {
+                  var fields, id;
+                  switch (action._value.type) {
+                    case 'page':
+                      id = {
+                        'pageview_id': ++pvid,
+                        'visit_id': session._id
+                      };
+                      fields = {
+                        'Page_title': action._value.title || '',
+                        'Page_URL': action._value.url,
+                        'Time': action._time
+                      };
+                      options = {
+                        'collection': collections[collectionsMap['Pages']]
+                      };
+                      break;
+                    case 'download':
+                      id = {
+                        'DownloadID': "" + session.id + "-" + (++pvid)
+                      };
+                      fields = {
+                        'DownloadName': action._value.url,
+                        'Time': action._time
+                      };
+                      options = {
+                        'collection': collections[collectionsMap['Downloads']]
+                      };
+                      break;
+                    case 'form':
+                      id = {
+                        'fillID': "" + session.id + "-" + (++pvid)
+                      };
+                      fields = {
+                        'FormName': action._value.form_id,
+                        'Time': action._time
+                      };
+                      options = {
+                        'collection': collections[collectionsMap['Forms']]
+                      };
+                      break;
+                    default:
+                      return next4();
+                  }
+                  return copernica.subprofile(id, fields, options, next4);
+                }), function(err, data) {
+                  var fields, id;
+                  id = {
+                    'Session_ID': session._id
+                  };
+                  fields = {
+                    'Length_of_visit': (new Date(session.actions[session.actions.length - 1]._time) - new Date(session.actions[0]._time)) / 1000,
+                    'Number_of_pages_visited': session.actions.length,
+                    'Start_time': session.actions[0]._time
+                  };
+                  options = {
+                    'collection': collections[collectionsMap['Visits']]
+                  };
+                  return copernica.subprofile(id, fields, options, next3);
+                });
               }), next2);
-            }), next1);
+            }), function(err, results) {
+              return next1(err, results, copernica);
+            });
           }
         ], next);
-      }), function(err, results) {
-        return callback(err, results);
-      });
+      }), callback);
     },
     '_classes': {
       'Copernica_Base': Copernica_Base,

@@ -63,7 +63,7 @@
         });
       });
       return async.waterfall(fns, function(err, account, hook, fact) {
-        var cb, options;
+        var cb, hookService, options;
         if (err) {
           return callback(err);
         }
@@ -84,12 +84,27 @@
             time: new Date
           });
         };
-        options = {
-          method: 'POST',
-          uri: hook.url,
-          json: row.data
-        };
-        return request.post(options, cb);
+        if (config.type != null) {
+          hookService = require("./types/" + config.type);
+          if (config.type === 'copernica') {
+            options = {
+              'credentials': {
+                'username': 'pk@ltl.uk.com',
+                'password': 'OpenWeek!!',
+                'account': 'Elliot UK'
+              },
+              'database': 'Master'
+            };
+          }
+          return hookService.exec(options, row.data, cb);
+        } else {
+          options = {
+            method: 'POST',
+            uri: hook.url,
+            json: row.data
+          };
+          return request.post(options, cb);
+        }
       });
     };
   };
