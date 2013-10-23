@@ -16,9 +16,6 @@ module.exports = class Hook_Model extends Model
 			req.model = @
 			next()
 
-	setup: () ->
-		@table.ensureIndex {hook_id: 1, fact_type: 1}, {unique: true}, () -> null
-
 	validate: (data, callback) ->
 		# TODO: better validation
 		# if not data.url
@@ -44,6 +41,9 @@ module.exports = class Hook_Model extends Model
 		}
 
 	setup: ->
+		cb = () -> null
+		@table.ensureIndex {hook_id: 1, fact_type: 1}, {unique: true}, cb
+
 		path = require 'path'
 		@db.addStreamOperation {
 			_id: 'hook_sender',
@@ -55,3 +55,5 @@ module.exports = class Hook_Model extends Model
 			sourceCollection: 'hooks_pending',
 			targetCollection: 'hooks_sent'
 		}
+		# for "snapshot" types, the {fact_id,fact_type} pair ensures only the latest hook is sent
+		@db.collection('hooks_pending').ensureIndex {fact_id: 1, fact_type: 1}, {unique: true}, cb

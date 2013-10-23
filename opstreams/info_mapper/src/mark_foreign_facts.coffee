@@ -21,7 +21,7 @@ module.exports = (stream, config, row) ->
 						return next()
 
 					next null, ids.map (id) ->
-						id: id,
+						id: id._id,
 						type: fk.fact_type,
 						time: +new Date
 

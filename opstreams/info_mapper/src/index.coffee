@@ -137,15 +137,31 @@ module.exports = (stream, config) ->
 							fact.set '_updated', new Date
 
 							# send to hooks...
-							hooks = hooks.filter (hook) -> hook.fact_type is fact.type
-							data = hooks.map (hook) ->
-								hook_id: hook.hook_id,
-								fact_type: hook.fact_type,
-								data: fact
+							data = hooks.filter (hook) -> hook.fact_type is info.model.type
+							data = data.map (hook) ->
+								if not fact._id
+									return null
+
+								row =
+									hook_id: hook.hook_id,
+									fact_type: hook.fact_type
+									fact_id: fact._id
+
+								if hook.mode isnt 'snapshot'
+									row.fact_id = (Math.round 999 * Math.random()) + (+new Date)
+									row.data = fact
+
+								return row
+							data = data.filter Boolean
 
 							if data.length > 0
-								stream.db.collection('hooks_pending').insert data, () ->
-									console.log 'Hooks', arguments
+								stream.db.collection('hooks_pending').insert data, (err) ->
+									if err
+										# duplicate rows arent a problem
+										return if err.code is 11000
+
+										console.error 'Add hook error', arguments
+										throw err
 
 							# delete this stuff just prior to saving...
 							for key of set.foreign_keys
