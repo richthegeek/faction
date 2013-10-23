@@ -20,11 +20,12 @@ module.exports = class Hook_Model extends Model
 		@table.ensureIndex {hook_id: 1, fact_type: 1}, {unique: true}, () -> null
 
 	validate: (data, callback) ->
-		if not data.url
-			return callback 'A hook should have a URL property.'
+		# TODO: better validation
+		# if not data.url
+		# 	return callback 'A hook should have a URL property.'
 
-		if data.handshake and typeof data.handshake isnt 'string'
-			return callback 'A hook\'s handshake property must be a string'
+		# if data.options and typeof data.options isnt 'string'
+		# 	return callback 'A hook\'s options property must be a string'
 
 		callback()
 
@@ -39,7 +40,7 @@ module.exports = class Hook_Model extends Model
 			fact_type: @data.fact_type,
 			url: @data.url,
 			type: @data.type or 'url',
-			handshake: @data.handshake
+			options: @data.options
 		}
 
 	setup: ->

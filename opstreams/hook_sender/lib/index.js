@@ -98,7 +98,7 @@
           default:
             hookService = require("./types/" + hook.type);
             if (hook.type === 'copernica') {
-              options = hook.handshake;
+              options = hook.options;
             }
             return hookService.exec(options, row.data, cb);
         }
