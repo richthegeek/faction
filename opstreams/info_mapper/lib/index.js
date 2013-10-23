@@ -184,7 +184,7 @@ module.exports = function(stream, config) {
               }
               fact.set('_updated', new Date);
               hooks = hooks.filter(function(hook) {
-                return hook.fact_type === row._type;
+                return hook.fact_type === fact.type;
               });
               data = hooks.map(function(hook) {
                 return {

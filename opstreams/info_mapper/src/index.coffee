@@ -137,7 +137,7 @@ module.exports = (stream, config) ->
 							fact.set '_updated', new Date
 
 							# send to hooks...
-							hooks = hooks.filter (hook) -> hook.fact_type is row._type
+							hooks = hooks.filter (hook) -> hook.fact_type is fact.type
 							data = hooks.map (hook) ->
 								hook_id: hook.hook_id,
 								fact_type: hook.fact_type,
