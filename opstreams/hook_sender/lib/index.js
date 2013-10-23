@@ -84,9 +84,9 @@
             time: new Date
           });
         };
-        if (config.type != null) {
-          hookService = require("./types/" + config.type);
-          if (config.type === 'copernica') {
+        if (hook.type != null) {
+          hookService = require("./types/" + hook.type);
+          if (hook.type === 'copernica') {
             options = {
               'credentials': {
                 'username': 'pk@ltl.uk.com',

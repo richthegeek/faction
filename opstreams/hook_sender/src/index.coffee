@@ -65,12 +65,12 @@ module.exports = (stream, config, row) ->
 					time: new Date
 				}
 
-			if config.type?
+			if hook.type?
 				# TODO: make this way more clever
-				hookService = require "./types/#{config.type}"
+				hookService = require "./types/#{hook.type}"
 
 				# TODO: less hardcoded way
-				if config.type is 'copernica'
+				if hook.type is 'copernica'
 					options =
 						'credentials':
 							'username': 'pk@ltl.uk.com'
