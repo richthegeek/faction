@@ -257,7 +257,7 @@
       }
       defaults = {
         'state': {},
-        'url': 'http://mailmanager.livelinknewmedia.com/',
+        'url': 'http://soapweb6.copernica.nl',
         'credentials': {
           'username': null,
           'account': null,

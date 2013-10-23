@@ -256,7 +256,7 @@ Copernica_Base = (function() {
     }
     defaults = {
       'state': {},
-      'url': 'http://mailmanager.livelinknewmedia.com/',
+      'url': 'http://soapweb6.copernica.nl',
       'credentials': {
         'username': null,
         'account': null,
@@ -771,10 +771,10 @@ module.exports = {
         }, updateProfile = function(copernica, next1) {
           var data_fields, id_fields;
           id_fields = {
-            'uid': profile._id,
             'Email': profile.email
           };
           data_fields = {
+            'uid': profile._id,
             'LeadScore': profile.score
           };
           console.log('updateProfile', id_fields, data_fields);
