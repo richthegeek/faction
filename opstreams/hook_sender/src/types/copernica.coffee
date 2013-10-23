@@ -409,8 +409,8 @@ class Copernica_Profile extends Copernica_Base
 # 'Private'
 	# verfiy _search query
 	_search_verify: ( query ) ->
-		if not ( query.user_id? or query.email? )
-			return error 'invalidOptions', 'Must contain either "user_id" or "email"'
+		# if not ( query.user_id? or query.email? )
+			# return error 'invalidOptions', 'Must contain either "user_id" or "email"'
 		return false
 
 	# Search for a profile, query should be 'user_id' or 'email'
@@ -434,7 +434,10 @@ class Copernica_Profile extends Copernica_Base
 				'operator': '='
 				'value': val
 
+		console.log 'preSearch', params
+
 		@request @soapMethods.search, params, ( err, data ) =>
+			console.log 'searchResults', err, data
 			data = [].concat data.result.items[@returnProperties.search]
 			for row in data
 				data.fields?.pair = [].concat data.fields.pair
@@ -442,8 +445,8 @@ class Copernica_Profile extends Copernica_Base
 
 	# verfiy _create fields
 	_create_verify: ( fields ) ->
-		if not fields.user_id or not fields.email
-			return error 'invalidOptions', 'Must contain at least "user_id" and "email"'
+		# if not fields.user_id or not fields.email
+			# return error 'invalidOptions', 'Must contain at least "user_id" and "email"'
 		return false
 
 	# Create a profile. fields must contain at least 'user_id' and 'email'
@@ -586,12 +589,14 @@ module.exports =
 					next1 err, results, copernica
 		], callback
 
-	'exec': ( options, data, callback ) ->
+	'exec': ( hook, data, callback ) ->
+		options = hook.options
 		# TODO: generalise
 		data = [].concat data
 		async.map data, ( ( profile, next ) ->
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
+					console.log 'loadCopernica'
 					copProfile = new Copernica_Profile options, next1
 
 				updateProfile = ( copernica, next1 ) ->
@@ -602,14 +607,18 @@ module.exports =
 					data_fields =
 						'LeadScore': profile.score
 
+					console.log 'updateProfile', id_fields, data_fields
+
 					# TODO: device info
 					copernica.profile id_fields, data_fields, next1
 
 				getCollections = ( copernica, next1 ) ->
+					console.log 'getCollectons'
 					copernica.getCollections ( err, collections ) ->
 						next1 err, copernica, collections
 
 				addSessions = ( copernica, collections, next1 ) ->
+					console.log 'addSessions'
 					collectionsMap = {}
 					for i, row of collections
 						collectionsMap[row.name] = i
