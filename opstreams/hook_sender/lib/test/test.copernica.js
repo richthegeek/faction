@@ -341,12 +341,29 @@
       });
     });
     test('can use setup exported method', function(done) {
-      return done();
-    });
-    return test('can use exec exported method', function(done) {
       var options;
       options = copernicaOptions;
-      return done();
+      return copernica.setup(options, function(err, results, copernica) {
+        assert.equal(null, err);
+        ids['deleteallcollections'] = 1;
+        return done();
+      });
+    });
+    return test('can remove all collections', function(done) {
+      return waitForId('deleteallcollections', function() {
+        var options;
+        options = copernicaOptions;
+        return new copernica._classes.Copernica_Base(options, function(err, obj) {
+          return obj.getCollections(function(err, results) {
+            return async.map(results, (function(collection, next) {
+              return obj.removeCollection(collection.id, next);
+            }), function(err, results) {
+              assert.equal(null, err);
+              return done();
+            });
+          });
+        });
+      });
     });
   });
 

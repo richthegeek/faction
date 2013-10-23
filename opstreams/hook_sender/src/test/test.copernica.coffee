@@ -286,11 +286,28 @@ suite 'copernica', ( ) ->
 					done( )
 
 	test 'can use setup exported method', ( done ) ->
-		# options = copernicaOptions
-		# copernica.setup options, ( err, results ) ->
+		options = copernicaOptions
+		copernica.setup options, ( err, results, copernica ) ->
+			assert.equal null, err
+
+			ids['deleteallcollections'] = 1
+
 			done( )
 
-	test 'can use exec exported method', ( done ) ->
-		options = copernicaOptions
+	# test 'can use exec exported method', ( done ) ->
+	# 	options = copernicaOptions
 
-		done( )
+	# 	done( )
+
+	test 'can remove all collections', ( done ) ->
+		waitForId 'deleteallcollections', ( ) ->
+			options = copernicaOptions
+
+			new copernica._classes.Copernica_Base options, ( err, obj ) ->
+				obj.getCollections ( err, results ) ->
+					async.map results, ( ( collection, next ) ->
+						obj.removeCollection collection.id, next
+					), ( err, results ) ->
+						assert.equal null, err
+
+						done( )

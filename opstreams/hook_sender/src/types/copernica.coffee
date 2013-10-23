@@ -96,10 +96,12 @@ collections =
 			'hidden': false
 			'index': true
 		'visit_id':
-			'type': 'integer'
-			'value': 0
+			'type': 'text'
+			'value': ''
 			'display': true
 			'ordered': false
+			'length': 50
+			'textlines': 1
 			'hidden': false
 			'index': true
 		'pageview_id':
@@ -157,10 +159,12 @@ collections =
 			'hidden': false
 			'index': true
 		'FillID':
-			'type': 'integer'
-			'value': 0
+			'type': 'text'
+			'value': ''
 			'display': true
 			'ordered': false
+			'length': 50
+			'textlines': 1
 			'hidden': false
 			'index': true
 	'Downloads':
@@ -182,10 +186,12 @@ collections =
 			'index': true
 			'empty': true # TODO: is this right?
 		'DownloadID':
-			'type': 'integer'
-			'value': 0
+			'type': 'text'
+			'value': ''
 			'display': true
 			'ordered': false
+			'length': 50
+			'textlines': 1
 			'hidden': false
 			'index': true
 		'AutoCamp':
@@ -553,15 +559,12 @@ module.exports =
 
 			getCurrentCollections = ( copernica, next ) ->
 				copernica.getCollections ( err, currentCollections ) ->
-					console.log err, currentCollections
-
 					next err, currentCollections, copernica
 
 			addMissingCollections = ( currentCollections, copernica, next1 ) ->
-				return console.log currentCollections
 				async.map Object.keys( collections ), ( ( collectionName, next2 ) ->
 					# Check it doesn't exist already
-					for row in currentCollections when collectionName is row.name
+					for row in currentCollections when collectionName is row?.name
 						return next2 null
 
 					async.waterfall [
@@ -571,40 +574,98 @@ module.exports =
 						createFields = ( collection, next3 ) ->
 							fields = collections[collectionName]
 
-							async.map fields, ( ( fieldName, next4 ) ->
+							async.map Object.keys( fields ), ( ( fieldName, next4 ) ->
 								params = fields[fieldName]
 								params.name = fieldName
 								params.id = collection.id
 
-								copernica.createField params, next4
+								copernica.createCollectionField params, next4
 							), next3
 					], next2
-				), next1
-
-		], ( err, results ) ->
-			callback err
+				), ( err, results ) ->
+					next1 err, results, copernica
+		], callback
 
 	'exec': ( options, data, callback ) ->
+		# TODO: generalise
+		data = [].concat data
 		async.map data, ( ( profile, next ) ->
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
 					copProfile = new Copernica_Profile options, next1
 
-				updateProfile = ( obj, next1 ) ->
-					# TODO: device info
-					obj.profile { 'user_id': profile._id, 'email': profile.email },
-						{ 'score': profile.score, 'name': profile.name }, next1
+				updateProfile = ( copernica, next1 ) ->
+					id_fields =
+						'uid': profile._id
+						'Email': profile.email
 
-				addSessions = ( obj, next1 ) ->
+					data_fields =
+						'LeadScore': profile.score
+
+					# TODO: device info
+					copernica.profile id_fields, data_fields, next1
+
+				getCollections = ( copernica, next1 ) ->
+					copernica.getCollections ( err, collections ) ->
+						next1 err, copernica, collections
+
+				addSessions = ( copernica, collections, next1 ) ->
+					collectionsMap = {}
+					for i, row of collections
+						collectionsMap[row.name] = i
+
 					async.map profile.devices, ( ( device, next2 ) ->
 						async.map device.sessions, ( ( session, next3 ) ->
-							obj.subprofile { 'session_id': session._id },
-								{ 'did': session.did 'actions': session.actions }, next3
+							# TODO: this is pretty hacky. need an ID on actions
+							pvid = 0
+							async.map session.actions, ( ( action, next4 ) ->
+								switch action._value.type
+									when 'page'
+										id =
+											'pageview_id': ++pvid
+											'visit_id': session._id
+										fields =
+											'Page_title': action._value.title or ''
+											'Page_URL': action._value.url
+											'Time': action._time
+										options =
+											'collection': collections[collectionsMap['Pages']]
+									when 'download'
+										id =
+											'DownloadID': "#{session.id}-#{++pvid}"
+										fields =
+											'DownloadName': action._value.url
+											'Time': action._time
+										options =
+											'collection': collections[collectionsMap['Downloads']]
+									when 'form'
+										id =
+											'fillID': "#{session.id}-#{++pvid}"
+										fields =
+											'FormName': action._value.form_id
+											'Time': action._time
+										options =
+											'collection': collections[collectionsMap['Forms']]
+									else
+										return next4( )
+
+								copernica.subprofile id, fields, options, next4
+
+							), ( err, data ) ->
+								id =
+									'Session_ID': session._id
+								fields =
+									'Length_of_visit': ( new Date( session.actions[session.actions.length - 1]._time ) - new Date( session.actions[0]._time ) ) / 1000
+									'Number_of_pages_visited': session.actions.length
+									'Start_time': session.actions[0]._time
+								options =
+									'collection': collections[collectionsMap['Visits']]
+								copernica.subprofile id, fields, options, next3
 						), next2
-					), next1
+					), ( err, results ) ->
+						next1 err, results, copernica
 			], next
-		), ( err, results ) ->
-			callback err, results
+		), callback
 
 	'_classes':
 		'Copernica_Base': Copernica_Base

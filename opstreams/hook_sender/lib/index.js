@@ -63,7 +63,7 @@
         });
       });
       return async.waterfall(fns, function(err, account, hook, fact) {
-        var cb, options;
+        var cb, hookService, options;
         if (err) {
           return callback(err);
         }
@@ -84,12 +84,24 @@
             time: new Date
           });
         };
-        options = {
-          method: 'POST',
-          uri: hook.url,
-          json: row.data
-        };
-        return request.post(options, cb);
+        if (hook.type == null) {
+          hook.type = 'url';
+        }
+        switch (hook.type) {
+          case 'url':
+            options = {
+              method: 'POST',
+              uri: hook.url,
+              json: row.data
+            };
+            return request.post(options, cb);
+          default:
+            hookService = require("./types/" + hook.type);
+            if (hook.type === 'copernica') {
+              options = hook.options;
+            }
+            return hookService.exec(options, row.data, cb);
+        }
       });
     };
   };
