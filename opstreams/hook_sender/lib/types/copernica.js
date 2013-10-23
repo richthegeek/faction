@@ -773,10 +773,10 @@
           }, updateProfile = function(copernica, next1) {
             var data_fields, id_fields;
             id_fields = {
-              'uid': profile._id,
               'Email': profile.email
             };
             data_fields = {
+              'uid': profile._id,
               'LeadScore': profile.score
             };
             return copernica.profile(id_fields, data_fields, next1);

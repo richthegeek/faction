@@ -596,10 +596,10 @@ module.exports =
 
 				updateProfile = ( copernica, next1 ) ->
 					id_fields =
-						'uid': profile._id
 						'Email': profile.email
 
 					data_fields =
+						'uid': profile._id
 						'LeadScore': profile.score
 
 					# TODO: device info
