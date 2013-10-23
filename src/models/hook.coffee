@@ -38,7 +38,7 @@ module.exports = class Hook_Model extends Model
 			hook_id: @data.hook_id,
 			fact_type: @data.fact_type,
 			url: @data.url,
-			type: @data.hook or 'url',
+			type: @data.type or 'url',
 			handshake: @data.handshake
 		}
 
