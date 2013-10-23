@@ -98,14 +98,7 @@
           default:
             hookService = require("./types/" + hook.type);
             if (hook.type === 'copernica') {
-              options = {
-                'credentials': {
-                  'username': 'pk@ltl.uk.com',
-                  'password': 'OpenWeek!!',
-                  'account': 'Elliot UK'
-                },
-                'database': 'Master'
-              };
+              options = hook.handshake;
             }
             return hookService.exec(options, row.data, cb);
         }

@@ -81,11 +81,6 @@ module.exports = (stream, config, row) ->
 
 					# TODO: less hardcoded way
 					if hook.type is 'copernica'
-						options =
-							'credentials':
-								'username': 'pk@ltl.uk.com'
-								'password': 'OpenWeek!!'
-								'account': 'Elliot UK'
-							'database': 'Master'
+						options = hook.handshake
 
 					hookService.exec options, row.data, cb
