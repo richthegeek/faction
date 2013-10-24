@@ -861,7 +861,13 @@
                 });
               }), next2);
             }), function(err, results) {
-              return next1(err, results, copernica);
+              var meaningfulResult;
+              meaningfulResult = {
+                'profile_id': profile._id,
+                'copernica_id': copernica.profile.id,
+                'time': +(new Date)
+              };
+              return next1(err, meaningfulResult, copernica);
             });
           }
         ], next);

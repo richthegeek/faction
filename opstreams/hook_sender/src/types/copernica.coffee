@@ -673,7 +673,12 @@ module.exports =
 								copernica.subprofile id, fields, options, next3
 						), next2
 					), ( err, results ) ->
-						next1 err, results, copernica
+						meaningfulResult =
+							'profile_id': profile._id
+							'copernica_id': copernica.profile.id
+							'time': +new Date
+
+						next1 err, meaningfulResult, copernica
 			], next
 		), callback
 
