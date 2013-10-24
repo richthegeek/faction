@@ -1,0 +1,10 @@
+{
+	"name": "fact_updater",
+	"private": true,
+	"version": "0.0.1",
+	"dependencies": {
+		"shared-cache": "*",
+		"async": "*"
+	},
+	"main": "./lib/index"
+}

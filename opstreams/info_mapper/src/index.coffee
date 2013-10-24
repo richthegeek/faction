@@ -24,9 +24,6 @@ module.exports = (stream, config) ->
 	_settings = Cache.create 'fact-settings-' + account_name, true, (key, next) ->
 		stream.db.collection('fact_settings').find().toArray next
 
-	_hooks = Cache.create 'hooks-' + account_name, true, (key, next) ->
-		stream.db.collection('hooks').find().toArray next
-
 	s = +new Date
 	t = (args...) ->
 		args.push (+new Date) - s
@@ -86,9 +83,8 @@ module.exports = (stream, config) ->
 
 		fns.push (skip..., next) ->_mappings.get (err, mappings) -> next err, mappings
 		fns.push (mappings, skip..., next) -> _settings.get (err, settings) -> next err, mappings, settings
-		fns.push (mappings, settings, skip..., next) -> _hooks.get (err, hooks) -> next err, mappings, settings, hooks
 
-		return async.waterfall fns, (err, mappings, settings, hooks) =>
+		return async.waterfall fns, (err, mappings, settings) =>
 			account = @accountModel
 			mappings = mappings.filter (mapping) -> mapping.info_type is row._type
 
@@ -126,63 +122,31 @@ module.exports = (stream, config) ->
 				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
 				fact = mergeFacts(set, info.fact, info.info)
 
-				info.model.import fact, () ->
-					fact = info.model
-					fact.loadFK () ->
-						fact.updateFields (err, fact) ->
-							# delete any "delete" fields AFTER eval
-							for key, mode of set.field_modes when mode is 'delete'
-								fact.del key
+				for key, mode of set.field_modes when mode is 'delete'
+					fact.del key
 
-							fact.set '_updated', new Date
+				fact.set '_updated', new Date
 
-							# send to hooks...
-							data = hooks.filter (hook) -> hook.fact_type is info.model.type
-							data = data.map (hook) ->
-								if not fact._id
-									return null
+				# delete this stuff just prior to saving...
+				for key of set.foreign_keys
+					# fact.del key
+					fact.del key
 
-								row =
-									hook_id: hook.hook_id,
-									fact_type: hook.fact_type
-									fact_id: fact._id
+				# save this into the target collection, move on
+				info.model.table.save fact, (err) ->
+					# create additional fact updates for FKs
+					list = (fk for field, fk of set.foreign_keys or {})
 
-								if hook.mode isnt 'snapshot'
-									row.fact_id = (Math.round 999 * Math.random()) + (+new Date)
-									row.data = fact
-
-								return row
-							data = data.filter Boolean
-
-							if data.length > 0
-								stream.db.collection('hooks_pending').insert data, (err) ->
-									if err
-										# duplicate rows arent a problem
-										return if err.code is 11000
-
-										console.error 'Add hook error', arguments
-										throw err
-
-							# delete this stuff just prior to saving...
-							for key of set.foreign_keys
-								# fact.del key
-								fact.del key
-
-							# save this into the target collection, move on
-							info.model.table.save fact, (err) ->
-								# create additional fact updates for FKs
-								list = (fk for field, fk of set.foreign_keys or {})
-
-								iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
-								async.map list, iter_wrap, (err, updates) ->
-									updates = updates.filter (v) -> v and v.length > 0
-									updates.push {
-										id: fact._id,
-										type: info.mapping.fact_type,
-										time: +new Date
-									}
-									# write to fact_updates
-									next err, updates
+					iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
+					async.map list, iter_wrap, (err, updates) ->
+						updates = updates.filter (v) -> v and v.length > 0
+						updates.push {
+							id: fact._id,
+							type: info.mapping.fact_type,
+							time: +new Date
+						}
+						# write to fact_updates
+						next err, updates
 
 
 			async.map mappings, parseMappings, (err, result) ->

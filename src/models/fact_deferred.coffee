@@ -35,30 +35,30 @@ module.exports = class Fact_deferred_Model extends Model
 			return @data.data
 		return @data
 
+	import: (data, callback) ->
+		self = @
+		@data = new DeferredObject data
+		@getSettings (err, settings) =>
+			for key, props of settings.foreign_keys or {}
+				@data.defer key, (key, data, next) =>
+					props = settings.foreign_keys[key]
+					Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
+						new Fact_deferred_Model self.account, props.fact_type, () ->
+							if props.has is 'one' or query._id?
+								@load query, next
+							else
+								@loadAll query, next
+			callback.call @, @data
+
 	load: (query, withFK, callback) ->
 		args = Array::slice.call(arguments, 1)
 		callback = args.pop()
 		withFK = args.pop() or false
 
-		self = @
-
 		super query, (err, row, query) ->
 			if err or not row
 				return callback err, row
-
-			@data = new DeferredObject @data
-			@getSettings (err, settings) =>
-				for key, props of settings.foreign_keys or {}
-					@data.defer key, (key, data, next) =>
-						props = settings.foreign_keys[key]
-						Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
-							new Fact_deferred_Model self.account, props.fact_type, () ->
-								if props.has is 'one' or query._id?
-									@load query, next
-								else
-									@loadAll query, next
-
-				callback.call @, err, @data, query
+			callback.call @, err, @data, query
 
 	loadAll: (query, withFK, callback) ->
 		args = Array::slice.call(arguments, 1)

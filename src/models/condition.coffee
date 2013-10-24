@@ -29,16 +29,3 @@ module.exports = class Condition_Model extends Model
 			description: data.description,
 			conditions: data.conditions
 		}
-
-	setup: () ->
-		path = require 'path'
-		@db.addStreamOperation {
-			_id: 'condition_eval',
-			sourceCollection: 'fact_updates',
-			targetCollection: 'fact_evaluated',
-			type: 'untracked',
-			operations: [{
-				modular: true
-				operation: path.resolve(__dirname, '../../opstreams/evaluate_conditions')
-			}],
-		}

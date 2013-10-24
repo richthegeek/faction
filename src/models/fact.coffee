@@ -23,6 +23,26 @@ module.exports = class Fact_Model extends Model
 				next()
 		else next()
 
+
+	setup: () ->
+		path = require 'path'
+		@db.addStreamOperation {
+			_id: 'fact_updater',
+			sourceCollection: 'fact_updates',
+			targetCollection: 'fact_evaluated',
+			type: 'untracked',
+			operations: [
+				{
+					modular: true
+					operation: path.resolve(__dirname, '../../opstreams/fact_updater')
+				},
+				{
+					modular: true,
+					operation: path.resolve(__dirname, '../../opstreams/condition_evaluator')
+				}
+			],
+		}
+
 	removeFull: (callback) ->
 		@table.drop callback
 

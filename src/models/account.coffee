@@ -22,9 +22,9 @@ module.exports = class Account_Model extends Model
 		new Action_Model @, () -> @setup()
 		new Actionresult_Model @, () -> @setup()
 		new Condition_Model @, () -> @setup()
-		## Fact + settings are not required to be setup
-		# new Fact_Model @, () -> @setup()
-		# new Factsettings_Model @, () -> @setup()
+		# fact has a "type" parameter for collection routing, don't worry about it.
+		new Fact_Model @, 'setup', () -> @setup()
+		new Factsettings_Model @, () -> @setup()
 		new Hook_Model @, () -> @setup()
 		new Info_Model @, () -> @setup()
 		new Infomapping_Model @, () -> @setup()
