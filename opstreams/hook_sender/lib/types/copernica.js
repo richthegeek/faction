@@ -469,17 +469,22 @@
       if (subprofileOptions == null) {
         subprofileOptions = false;
       }
-      return async.waterfall([
+      async.waterfall([
         loadProfile = function(next) {
+          console.log('~~ load profile');
           return _this._search(id, subprofileOptions || {}, next);
         }, createIfNeeded = function(profile, next) {
           var row, _i, _len, _ref;
+          console.log('~~ create if needed');
           profile = [].concat(profile);
           if (profile.length === 0) {
+            console.log('~~ create');
             return _this._create(_.extend(id, fieldsToAdd), subprofileOptions || {}, function(err, data) {
+              console.log('~~ create cb');
               return next(err, data);
             });
           } else {
+            console.log('~~ update', profile);
             profile = profile.shift();
             profile._fields = {};
             _ref = [].concat(profile.fields.pair);
@@ -492,18 +497,20 @@
               }
             }
             return _this._update(profile.id, fieldsToAdd, function(err, data) {
+              console.log('~~ update cb');
               return next(err, profile);
             });
           }
         }
       ], function(err, profile) {
-        if (!subprofileOptions) {
-          _this.currentProfile = profile;
-          return callback(err, _this);
-        } else {
-          return callback(err, profile);
-        }
+        return console.log('~~ do callback');
       });
+      if (!subprofileOptions) {
+        this.currentProfile = profile;
+        return callback(err, this);
+      } else {
+        return callback(err, profile);
+      }
     };
 
     Copernica_Profile.prototype.subprofile = function(id, fieldsToAdd, options, callback) {
@@ -514,6 +521,7 @@
       if (options == null) {
         options = {};
       }
+      console.log('** in subprofile');
       opts = {
         'state': {
           'client': this.client,
@@ -523,9 +531,11 @@
         }
       };
       return new Copernica_Subprofile(opts, function(err, obj) {
-        return obj.profile(id, fieldsToAdd, callback, _.extend(options, {
+        console.log('** init');
+        obj.profile(id, fieldsToAdd, callback, _.extend(options, {
           'id': opts.state.currentProfile.id
         }));
+        return console.log('** in post subprofile');
       });
     };
 

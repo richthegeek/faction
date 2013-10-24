@@ -368,14 +368,19 @@ class Copernica_Profile extends Copernica_Base
 	profile: ( id, fieldsToAdd = {}, callback, subprofileOptions = false ) ->
 		async.waterfall [
 			loadProfile = ( next ) =>
+				console.log '~~ load profile'
 				@_search id, subprofileOptions or {}, next
 
 			createIfNeeded = ( profile, next ) =>
+				console.log '~~ create if needed'
 				profile = [].concat profile
 				if profile.length is 0
+					console.log '~~ create'
 					@_create _.extend( id, fieldsToAdd ), subprofileOptions or {}, ( err, data ) ->
+						console.log '~~ create cb'
 						next err, data
 				else
+					console.log '~~ update', profile
 					profile = profile.shift( )
 					profile._fields = {}
 					for row in [].concat profile.fields.pair
@@ -385,10 +390,12 @@ class Copernica_Profile extends Copernica_Base
 							profile._fields[row.key] = row.value
 
 					@_update profile.id, fieldsToAdd, ( err, data ) ->
+						console.log '~~ update cb'
 						# TODO: verify success
 						next err, profile
 
 		], ( err, profile ) =>
+				console.log '~~ do callback'
 			if not subprofileOptions
 				@currentProfile = profile
 				callback err, @
@@ -396,6 +403,7 @@ class Copernica_Profile extends Copernica_Base
 				callback err, profile
 
 	subprofile: ( id, fieldsToAdd = {}, options = {}, callback ) ->
+		console.log '** in subprofile'
 		opts =
 			'state':
 				'client': @client
@@ -404,8 +412,10 @@ class Copernica_Profile extends Copernica_Base
 				'currentProfile': @currentProfile
 
 		new Copernica_Subprofile opts, ( err, obj ) ->
+			console.log '** init'
 			obj.profile id, fieldsToAdd, callback, _.extend options,
 				'id': opts.state.currentProfile.id
+			console.log '** in post subprofile'
 
 # 'Private'
 	# verfiy _search query
