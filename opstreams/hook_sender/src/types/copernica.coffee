@@ -395,7 +395,7 @@ class Copernica_Profile extends Copernica_Base
 						next err, profile
 
 		], ( err, profile ) =>
-				console.log '~~ do callback'
+			console.log '~~ do callback'
 			if not subprofileOptions
 				@currentProfile = profile
 				callback err, @

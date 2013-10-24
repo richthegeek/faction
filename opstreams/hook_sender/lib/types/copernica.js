@@ -469,7 +469,7 @@
       if (subprofileOptions == null) {
         subprofileOptions = false;
       }
-      async.waterfall([
+      return async.waterfall([
         loadProfile = function(next) {
           console.log('~~ load profile');
           return _this._search(id, subprofileOptions || {}, next);
@@ -503,14 +503,14 @@
           }
         }
       ], function(err, profile) {
-        return console.log('~~ do callback');
+        console.log('~~ do callback');
+        if (!subprofileOptions) {
+          _this.currentProfile = profile;
+          return callback(err, _this);
+        } else {
+          return callback(err, profile);
+        }
       });
-      if (!subprofileOptions) {
-        this.currentProfile = profile;
-        return callback(err, this);
-      } else {
-        return callback(err, profile);
-      }
     };
 
     Copernica_Profile.prototype.subprofile = function(id, fieldsToAdd, options, callback) {
