@@ -28,8 +28,7 @@ module.exports = function(stream, config, row) {
     self = this;
     fns = {};
     if (!row.type) {
-      console.log(row);
-      return;
+      return callback();
     }
     fns.account = function(next) {
       if (self.accountModel) {

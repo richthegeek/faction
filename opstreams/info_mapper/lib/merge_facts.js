@@ -5,11 +5,20 @@ module.exports = function(stream, config, row) {
   _ref = require('./column_ops')(), getColumn = _ref.getColumn, setColumn = _ref.setColumn, deleteColumn = _ref.deleteColumn;
   return function(settings, old_fact, mid_fact) {
     var a, b, field, k, list, mode, new_fact, orig, v, _ref1, _ref2;
+    if (old_fact == null) {
+      old_fact = {};
+    }
+    if (mid_fact == null) {
+      mid_fact = {};
+    }
     new_fact = xtend(old_fact, mid_fact);
     _ref1 = settings.field_modes;
     for (field in _ref1) {
       mode = _ref1[field];
       if (!mid_fact[field]) {
+        continue;
+      }
+      if (mode["eval"]) {
         continue;
       }
       if (mode === 'all') {

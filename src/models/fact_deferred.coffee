@@ -36,8 +36,12 @@ module.exports = class Fact_deferred_Model extends Model
 		return @data
 
 	import: (data, callback) ->
+		@data = data or {}
+		@defer callback
+
+	defer: (callback) ->
 		self = @
-		@data = new DeferredObject data
+		@data = new DeferredObject @data or {}
 		@getSettings (err, settings) =>
 			for key, props of settings.foreign_keys or {}
 				@data.defer key, (key, data, next) =>
@@ -50,25 +54,34 @@ module.exports = class Fact_deferred_Model extends Model
 								@loadAll query, next
 			callback.call @, @data
 
-	load: (query, withFK, callback) ->
+	load: (query, defer, callback) ->
 		args = Array::slice.call(arguments, 1)
 		callback = args.pop()
-		withFK = args.pop() or false
+		defer = args.pop() ? true
 
-		super query, (err, row, query) ->
+		if (query instanceof mongodb.ObjectID) or (typeof query in ['string', 'number'])
+			query = {_id: query}
+
+		@table.findOne query, (err, row) =>
+			@data = row or {}
 			if err or not row
 				return callback err, row
+
+			if defer
+				return @defer () =>
+					callback.call @, err, @data, query
+
 			callback.call @, err, @data, query
 
-	loadAll: (query, withFK, callback) ->
+	loadAll: (query, defer, callback) ->
 		args = Array::slice.call(arguments, 1)
 		callback = args.pop()
-		withFK = args.pop() or false
+		defer = args.pop() ? true
 
 		@table.find(query, {_id: 1}).toArray (err, ids) =>
 			loader = (row, next) =>
 				@_spawn () ->
-					@load {_id: row._id}, withFK, next
+					@load {_id: row._id}, defer, next
 
 			async.map ids, loader, (err, rows) ->
 				callback.call @, err, wrapArray rows

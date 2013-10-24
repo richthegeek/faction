@@ -10,7 +10,7 @@ module.exports = function(stream, config) {
   models = lib + '/models/';
   Account_Model = require(models + 'account');
   InfoMapping_Model = require(models + 'infomapping');
-  Fact_Model = require(models + 'fact');
+  Fact_Model = require(models + 'fact_deferred');
   config.models = {
     account: Account_Model,
     infomapping: InfoMapping_Model,
@@ -21,7 +21,41 @@ module.exports = function(stream, config) {
     return stream.db.collection('info_mappings').find().toArray(next);
   });
   _settings = Cache.create('fact-settings-' + account_name, true, function(key, next) {
-    return stream.db.collection('fact_settings').find().toArray(next);
+    return stream.db.collection('fact_settings').find().toArray(function(err, settings) {
+      var collections, ensureIndex, fk, fks, setting, _i, _len, _ref;
+      if (err || !settings) {
+        return next(err, settings);
+      }
+      collections = {};
+      ensureIndex = function(fk, next) {
+        var index, val, _name, _ref;
+        if (collections[_name = fk.fact_type] == null) {
+          collections[_name] = stream.db.collection(Fact_Model.collectionname(fk.fact_type));
+        }
+        index = {};
+        _ref = fk.query;
+        for (key in _ref) {
+          val = _ref[key];
+          index[key] = 1;
+        }
+        if (index._id) {
+          return next();
+        }
+        return collections[fk.fact_type].ensureIndex(index, next);
+      };
+      fks = [];
+      for (_i = 0, _len = settings.length; _i < _len; _i++) {
+        setting = settings[_i];
+        _ref = setting.foreign_keys;
+        for (key in _ref) {
+          fk = _ref[key];
+          fks.push(fk);
+        }
+      }
+      return async.map(fks, ensureIndex, function() {
+        return next(err, settings);
+      });
+    });
   });
   s = +(new Date);
   t = function() {
@@ -116,16 +150,17 @@ module.exports = function(stream, config) {
           return next();
         }
         return new Fact_Model(account, mapping.fact_type, function() {
-          var model;
+          var model,
+            _this = this;
           model = this;
-          return this.load(query, true, function(err, fact) {
+          return this.load(query, false, function(err, fact) {
             if (fact == null) {
               fact = {};
             }
             if (err) {
               return next(err);
             }
-            return this.addShim(function(err, fact) {
+            return _this.addShim(function(err, fact) {
               delete row._type;
               if (Object.prototype.toString.call(row._id) === '[object Object]') {
                 delete row._id;
@@ -137,7 +172,7 @@ module.exports = function(stream, config) {
                 obj._id = query._id;
                 return next(null, {
                   model: model,
-                  fact: fact,
+                  fact: fact || {},
                   mapping: mapping,
                   info: obj
                 });
@@ -159,18 +194,18 @@ module.exports = function(stream, config) {
           }
           return _results;
         })()).pop();
-        fact = mergeFacts(set, info.fact, info.info);
+        for (key in set.foreign_keys) {
+          info.fact.del(key);
+        }
+        fact = mergeFacts(set, info.fact.data, info.info);
         _ref1 = set.field_modes;
         for (key in _ref1) {
           mode = _ref1[key];
           if (mode === 'delete') {
-            fact.del(key);
+            info.fact.del.call(fact, key);
           }
         }
-        fact.set('_updated', new Date);
-        for (key in set.foreign_keys) {
-          fact.del(key);
-        }
+        info.fact.set.call(fact, '_updated', new Date);
         return info.model.table.save(fact, function(err) {
           var field, fk, iter_wrap, list;
           list = (function() {
@@ -185,6 +220,9 @@ module.exports = function(stream, config) {
           })();
           iter_wrap = function(fk, next) {
             return markForeignFacts(fk, fact, next);
+          };
+          iter_wrap = function(fk, next) {
+            return next(null, []);
           };
           return async.map(list, iter_wrap, function(err, updates) {
             updates = updates.filter(function(v) {

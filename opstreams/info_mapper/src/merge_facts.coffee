@@ -4,10 +4,16 @@ module.exports = (stream, config, row) ->
 	{getColumn, setColumn, deleteColumn} = require('./column_ops')()
 
 	return (settings, old_fact, mid_fact) ->
+		old_fact ?= {}
+		mid_fact ?= {}
+
 		new_fact = xtend old_fact, mid_fact
 
 		# apply the field_modes
 		for field, mode of settings.field_modes when mid_fact[field]
+			if mode.eval
+				continue
+
 			if mode is 'all'
 				orig = old_fact[field] or []
 				orig = [] if not Array.isArray orig

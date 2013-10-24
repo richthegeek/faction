@@ -29,7 +29,6 @@ module.exports = (stream, config) ->
 
 	return (row, callback) ->
 		self = @
-
 		fns = {}
 		if not @accountModel?
 			fns.account = (next) ->
@@ -49,7 +48,8 @@ module.exports = (stream, config) ->
 
 			new Fact_Model @accountModel, row.type, () ->
 				model = @
-				@load {_id: row.id}, false, (err, fact = {}) ->
+				@load {_id: row.id}, true, (err, fact = {}) ->
+
 					if err or not fact._id
 						return callback err, null
 
@@ -61,6 +61,10 @@ module.exports = (stream, config) ->
 							[key, props] = arr
 							# evaluate the value
 							@data.eval props.eval, (err, result) =>
+
+								if not result and props.default?
+									result = props.default
+
 								# evaluate the key, if it's deferred we'll need it.
 								@data.eval 'this.' + key, (err) =>
 									# send it forward

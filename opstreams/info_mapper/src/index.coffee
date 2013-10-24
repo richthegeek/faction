@@ -9,7 +9,7 @@ module.exports = (stream, config) ->
 
 	Account_Model = require models + 'account'
 	InfoMapping_Model = require models + 'infomapping'
-	Fact_Model = require models + 'fact'
+	Fact_Model = require models + 'fact_deferred'
 
 	config.models =
 		account: Account_Model
@@ -22,7 +22,31 @@ module.exports = (stream, config) ->
 		stream.db.collection('info_mappings').find().toArray next
 
 	_settings = Cache.create 'fact-settings-' + account_name, true, (key, next) ->
-		stream.db.collection('fact_settings').find().toArray next
+		stream.db.collection('fact_settings').find().toArray (err, settings) ->
+			if err or not settings
+				return next err, settings
+
+			# create indexes on all thse foreign columns.
+			collections = {}
+			ensureIndex = (fk, next) ->
+				collections[fk.fact_type] ?= stream.db.collection Fact_Model.collectionname fk.fact_type
+
+				index = {}
+				for key, val of fk.query
+					index[key] = 1
+
+				if index._id
+					return next()
+
+				collections[fk.fact_type].ensureIndex index, next
+
+			fks = []
+			for setting in settings
+				for key, fk of setting.foreign_keys
+					fks.push fk
+
+			async.map fks, ensureIndex, () ->
+				next err, settings
 
 	s = +new Date
 	t = (args...) ->
@@ -98,7 +122,7 @@ module.exports = (stream, config) ->
 
 				new Fact_Model account, mapping.fact_type, () ->
 					model = @
-					@load query, true, (err, fact = {}) ->
+					@load query, false, (err, fact = {}) =>
 						if err
 							return next err
 
@@ -111,7 +135,7 @@ module.exports = (stream, config) ->
 
 								next null, {
 									model: model
-									fact: fact,
+									fact: fact or {},
 									mapping: mapping,
 									info: obj
 								}
@@ -119,18 +143,17 @@ module.exports = (stream, config) ->
 			combineMappings = (info, next) ->
 				set = (s for s in settings when s._id is info.model.type).pop()
 
+				# remove this stuff, it gets in the way.
+				for key of set.foreign_keys
+					info.fact.del key
+
 				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
-				fact = mergeFacts(set, info.fact, info.info)
+				fact = mergeFacts set, info.fact.data, info.info
 
 				for key, mode of set.field_modes when mode is 'delete'
-					fact.del key
+					info.fact.del.call fact, key
 
-				fact.set '_updated', new Date
-
-				# delete this stuff just prior to saving...
-				for key of set.foreign_keys
-					# fact.del key
-					fact.del key
+				info.fact.set.call fact, '_updated', new Date
 
 				# save this into the target collection, move on
 				info.model.table.save fact, (err) ->
@@ -138,6 +161,10 @@ module.exports = (stream, config) ->
 					list = (fk for field, fk of set.foreign_keys or {})
 
 					iter_wrap = (fk, next) -> markForeignFacts fk, fact, next
+
+					# debug
+					iter_wrap = (fk, next) -> next null, []
+
 					async.map list, iter_wrap, (err, updates) ->
 						updates = updates.filter (v) -> v and v.length > 0
 						updates.push {

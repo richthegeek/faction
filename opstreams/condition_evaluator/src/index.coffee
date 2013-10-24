@@ -32,8 +32,7 @@ module.exports = (stream, config, row) ->
 		fns = {}
 
 		if not row.type
-			console.log row
-			return
+			return callback()
 
 		fns.account = (next) ->
 			if self.accountModel

@@ -62,7 +62,7 @@ module.exports = function(stream, config) {
         model = this;
         return this.load({
           _id: row.id
-        }, false, function(err, fact) {
+        }, true, function(err, fact) {
           var _this = this;
           if (fact == null) {
             fact = {};
@@ -87,6 +87,9 @@ module.exports = function(stream, config) {
             evaluate = function(arr, next) {
               key = arr[0], props = arr[1];
               return _this.data["eval"](props["eval"], function(err, result) {
+                if (!result && (props["default"] != null)) {
+                  result = props["default"];
+                }
                 return _this.data["eval"]('this.' + key, function(err) {
                   return next(null, {
                     key: key,
