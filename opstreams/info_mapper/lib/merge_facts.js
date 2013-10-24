@@ -4,7 +4,7 @@ module.exports = function(stream, config, row) {
   xtend = require('xtend');
   _ref = require('./column_ops')(), getColumn = _ref.getColumn, setColumn = _ref.setColumn, deleteColumn = _ref.deleteColumn;
   return function(settings, old_fact, mid_fact) {
-    var a, ac, b, field, i, j, k, list, mode, new_fact, orig, v, _i, _j, _ref1, _ref2, _ref3, _ref4, _ref5;
+    var a, b, field, k, list, mode, new_fact, orig, v, _ref1, _ref2;
     new_fact = xtend(old_fact, mid_fact);
     _ref1 = settings.field_modes;
     for (field in _ref1) {
@@ -27,25 +27,12 @@ module.exports = function(stream, config, row) {
             };
           }
         }
-        for (i = _i = 0, _ref2 = list.length; 0 <= _ref2 ? _i < _ref2 : _i > _ref2; i = 0 <= _ref2 ? ++_i : --_i) {
-          if (!(a = list[i])) {
-            continue;
-          }
-          ac = JSON.stringify(a._value);
-          for (j = _j = _ref3 = i + 1, _ref4 = list.length; _ref3 <= _ref4 ? _j < _ref4 : _j > _ref4; j = _ref3 <= _ref4 ? ++_j : --_j) {
-            if (b = list[j]) {
-              if ((a._time - b._time === 0) && ac === JSON.stringify(b._value)) {
-                list[j] = false;
-              }
-            }
-          }
-        }
         setColumn(new_fact, field, list.filter(function(v) {
           return !!v;
         }));
       }
       if (mode === 'oldest') {
-        setColumn(new_fact, field, (_ref5 = old_fact[field]) != null ? _ref5 : mid_fact[field]);
+        setColumn(new_fact, field, (_ref2 = old_fact[field]) != null ? _ref2 : mid_fact[field]);
       }
       if (mode === 'min') {
         a = Number(mid_fact[field]) || Math.min();

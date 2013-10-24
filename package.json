@@ -1,22 +1,21 @@
 {
-	"name": "triggers",
-	"description": "Triggering REST server as defined by http://docs.faction.apiary.io/",
-	"dependencies": {
-		"mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git",
-		"mongodb-opstream-daemon": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream-daemon.git",
-
-		"traverse": "*",
-		"validator": "*",
-		"restify": "*",
-		"async": "*",
-		"contextify": "*",
-		"moment": "*",
-		"shared-cache": "*",
-		"deferred-object": "*"
-	},
-	"scripts": {
-		"start": "node ./lib/app",
-		"start-dev": "node-dev ./lib/app"
-	},
-	"main": "./lib/app"
+  "name": "triggers",
+  "description": "Triggering REST server as defined by http://docs.faction.apiary.io/",
+  "dependencies": {
+    "mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git",
+    "mongodb-opstream-daemon": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream-daemon.git",
+    "traverse": "*",
+    "validator": "*",
+    "restify": "*",
+    "async": "*",
+    "contextify": "*",
+    "moment": "*",
+    "shared-cache": "*",
+    "deferred-object": "*"
+  },
+  "scripts": {
+    "start": "node ./lib/app",
+    "start-dev": "node-dev ./lib/app"
+  },
+  "main": "./lib/app"
 }

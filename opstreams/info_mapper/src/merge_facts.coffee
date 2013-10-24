@@ -18,15 +18,6 @@ module.exports = (stream, config, row) ->
 						_time: config.time
 						_value: v
 
-				# de-dup in case of double-processed event (shouldnt happen but...)
-				for i in [0...list.length] when a = list[i]
-					ac = JSON.stringify(a._value)
-					for j in [(i+1)...list.length] when b = list[j]
-						if (a._time - b._time is 0) and ac is JSON.stringify(b._value)
-							# these two are the same.
-							list[j] = false
-
-
 				setColumn new_fact, field, list.filter (v) -> !! v
 
 			if mode is 'oldest'
