@@ -6,7 +6,6 @@ module.exports = (stream, config, row) ->
 		# find in the collection using this query
 		try
 			parseObject fk.query, {fact: fact}, (query) =>
-
 				# verify its not an empty query...
 				size = 0
 				for k, v of query when v?

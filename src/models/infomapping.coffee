@@ -60,3 +60,5 @@ module.exports = class InfoMapping_Model extends Model
 			sourceCollection: 'info',
 			targetCollection: 'fact_updates'
 		}
+
+		@db.collection('fact_updates').ensureIndex {type: 1, id: 1}, {unique: true}, () -> console.log arguments

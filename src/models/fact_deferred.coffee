@@ -35,40 +35,53 @@ module.exports = class Fact_deferred_Model extends Model
 			return @data.data
 		return @data
 
-	load: (query, withFK, callback) ->
+	import: (data, callback) ->
+		@data = data or {}
+		@defer callback
+
+	defer: (callback) ->
+		self = @
+		@data = new DeferredObject @data or {}
+		@getSettings (err, settings) =>
+			for key, props of settings.foreign_keys or {}
+				@data.defer key, (key, data, next) =>
+					props = settings.foreign_keys[key]
+					Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
+						new Fact_deferred_Model self.account, props.fact_type, () ->
+							if props.has is 'one' or query._id?
+								@load query, next
+							else
+								@loadAll query, next
+			callback.call @, @data
+
+	load: (query, defer, callback) ->
 		args = Array::slice.call(arguments, 1)
 		callback = args.pop()
-		withFK = args.pop() or false
+		defer = args.pop() ? true
 
-		self = @
+		if (query instanceof mongodb.ObjectID) or (typeof query in ['string', 'number'])
+			query = {_id: query}
 
-		super query, (err, row, query) ->
+		@table.findOne query, (err, row) =>
+			@data = row or {}
 			if err or not row
 				return callback err, row
 
-			@data = new DeferredObject @data
-			@getSettings (err, settings) =>
-				for key, props of settings.foreign_keys or {}
-					@data.defer key, (key, data, next) =>
-						props = settings.foreign_keys[key]
-						Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
-							new Fact_deferred_Model self.account, props.fact_type, () ->
-								if props.has is 'one' or query._id?
-									@load query, next
-								else
-									@loadAll query, next
+			if defer
+				return @defer () =>
+					callback.call @, err, @data, query
 
-				callback.call @, err, @data, query
+			callback.call @, err, @data, query
 
-	loadAll: (query, withFK, callback) ->
+	loadAll: (query, defer, callback) ->
 		args = Array::slice.call(arguments, 1)
 		callback = args.pop()
-		withFK = args.pop() or false
+		defer = args.pop() ? true
 
 		@table.find(query, {_id: 1}).toArray (err, ids) =>
 			loader = (row, next) =>
 				@_spawn () ->
-					@load {_id: row._id}, withFK, next
+					@load {_id: row._id}, defer, next
 
 			async.map ids, loader, (err, rows) ->
 				callback.call @, err, wrapArray rows

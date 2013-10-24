@@ -4,10 +4,16 @@ module.exports = (stream, config, row) ->
 	{getColumn, setColumn, deleteColumn} = require('./column_ops')()
 
 	return (settings, old_fact, mid_fact) ->
+		old_fact ?= {}
+		mid_fact ?= {}
+
 		new_fact = xtend old_fact, mid_fact
 
 		# apply the field_modes
 		for field, mode of settings.field_modes when mid_fact[field]
+			if mode.eval
+				continue
+
 			if mode is 'all'
 				orig = old_fact[field] or []
 				orig = [] if not Array.isArray orig
@@ -17,15 +23,6 @@ module.exports = (stream, config, row) ->
 					list[k] =
 						_time: config.time
 						_value: v
-
-				# de-dup in case of double-processed event (shouldnt happen but...)
-				for i in [0...list.length] when a = list[i]
-					ac = JSON.stringify(a._value)
-					for j in [(i+1)...list.length] when b = list[j]
-						if (a._time - b._time is 0) and ac is JSON.stringify(b._value)
-							# these two are the same.
-							list[j] = false
-
 
 				setColumn new_fact, field, list.filter (v) -> !! v
 

@@ -42,18 +42,20 @@ module.exports = (server) ->
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
 			if err or not found
 				return res.notFound 'fact'
+
 			async.map req.body.with, @data.get.bind(@data), () =>
 				if not req.body.map
 					return res.send @data
 
-				obj = {}
-				get = (arg, next) =>
-					[key, path] = arg
-					@data.eval path, (err, result) ->
-						return next err, obj[key] = result
+				@addShim () =>
+					obj = {}
+					get = (arg, next) =>
+						[key, path] = arg
+						@data.eval path, (err, result) ->
+							return next null, obj[key] = result
 
-				async.map ([key, path] for key, path of req.body.map), get, () =>
-					next res.send obj
+					async.map ([key, path] for key, path of req.body.map), get, () =>
+						next res.send obj
 
 	# update a fact by ID.
 	server.post '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->

@@ -1,10 +1,8 @@
 {
-	"name": "info_mapper",
+	"name": "fact_updater",
 	"private": true,
 	"version": "0.0.1",
 	"dependencies": {
-		"xtend": "*",
-		"traverse": "*",
 		"shared-cache": "*",
 		"async": "*"
 	},
