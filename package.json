@@ -5,7 +5,7 @@
 		"mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git",
 		"mongodb-opstream-daemon": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream-daemon.git",
 
-
+		"traverse": "*",
 		"validator": "*",
 		"restify": "*",
 		"async": "*",
