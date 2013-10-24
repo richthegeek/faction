@@ -550,12 +550,14 @@
       }
       params = {
         'allproperties': true,
-        'requirements': []
+        'requirements': {
+          'requirement': []
+        }
       };
       params = _.extend(params, options);
       for (key in query) {
         val = query[key];
-        params.requirements.push({
+        params.requirements.requirement.push({
           'fieldname': key,
           'casesensitive': false,
           'operator': '=',

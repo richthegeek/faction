@@ -424,11 +424,12 @@ class Copernica_Profile extends Copernica_Base
 
 		params =
 			'allproperties': true
-			'requirements': []
+			'requirements':
+				'requirement': []
 		params = _.extend params, options
 
 		for key, val of query
-			params.requirements.push
+			params.requirements.requirement.push
 				'fieldname': key
 				'casesensitive': false
 				'operator': '='
