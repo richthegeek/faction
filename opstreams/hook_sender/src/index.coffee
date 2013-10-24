@@ -95,9 +95,6 @@ module.exports = (stream, config, row) ->
 						console.log JSON.stringify err
 						throw err
 
-					console.log 'Callback', result
-					return
-
 					cb err, result
 			catch err
 				console.log 'Shit code alert'

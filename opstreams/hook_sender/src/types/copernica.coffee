@@ -435,10 +435,7 @@ class Copernica_Profile extends Copernica_Base
 				'operator': '='
 				'value': val
 
-		console.log 'preSearch', params
-
 		@request @soapMethods.search, params, ( err, data ) =>
-			console.log 'searchResults', err, data
 			data = [].concat data.result.items[@returnProperties.search]
 			for row in data
 				data.fields?.pair = [].concat data.fields.pair
@@ -597,7 +594,6 @@ module.exports =
 		async.map data, ( ( profile, next ) ->
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
-					console.log 'loadCopernica'
 					copProfile = new Copernica_Profile options, next1
 
 				updateProfile = ( copernica, next1 ) ->
@@ -607,19 +603,14 @@ module.exports =
 					data_fields =
 						'uid': profile._id
 						'LeadScore': profile.score
-
-					console.log 'updateProfile', id_fields, data_fields
-
 					# TODO: device info
 					copernica.profile id_fields, data_fields, next1
 
 				getCollections = ( copernica, next1 ) ->
-					console.log 'getCollectons'
 					copernica.getCollections ( err, collections ) ->
 						next1 err, copernica, collections
 
 				addSessions = ( copernica, collections, next1 ) ->
-					console.log 'addSessions'
 					collectionsMap = {}
 					for i, row of collections
 						collectionsMap[row.name] = i

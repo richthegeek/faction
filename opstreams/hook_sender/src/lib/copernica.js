@@ -546,22 +546,22 @@ Copernica_Profile = (function(_super) {
     }
     params = {
       'allproperties': true,
-      'requirements': []
+      'requirements': {
+        'requirement': []
+      }
     };
     params = _.extend(params, options);
     for (key in query) {
       val = query[key];
-      params.requirements.push({
+      params.requirements.requirement.push({
         'fieldname': key,
         'casesensitive': false,
         'operator': '=',
         'value': val
       });
     }
-    console.log('preSearch', params);
     return this.request(this.soapMethods.search, params, function(err, data) {
       var row, _i, _len, _ref;
-      console.log('searchResults', err, data);
       data = [].concat(data.result.items[_this.returnProperties.search]);
       for (_i = 0, _len = data.length; _i < _len; _i++) {
         row = data[_i];
@@ -766,7 +766,6 @@ module.exports = {
       return async.waterfall([
         loadCopernica = function(next1) {
           var copProfile;
-          console.log('loadCopernica');
           return copProfile = new Copernica_Profile(options, next1);
         }, updateProfile = function(copernica, next1) {
           var data_fields, id_fields;
@@ -777,16 +776,13 @@ module.exports = {
             'uid': profile._id,
             'LeadScore': profile.score
           };
-          console.log('updateProfile', id_fields, data_fields);
           return copernica.profile(id_fields, data_fields, next1);
         }, getCollections = function(copernica, next1) {
-          console.log('getCollectons');
           return copernica.getCollections(function(err, collections) {
             return next1(err, copernica, collections);
           });
         }, addSessions = function(copernica, collections, next1) {
           var collectionsMap, i, row;
-          console.log('addSessions');
           collectionsMap = {};
           for (i in collections) {
             row = collections[i];
