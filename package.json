@@ -3,6 +3,9 @@
 	"description": "Triggering REST server as defined by http://docs.faction.apiary.io/",
 	"dependencies": {
 		"mongodb-opstream": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream.git",
+		"mongodb-opstream-daemon": "git+https://bithiive:bithuve@bitbucket.org/bithiive/mongodb-opstream-daemon.git",
+
+
 		"validator": "*",
 		"restify": "*",
 		"async": "*",
