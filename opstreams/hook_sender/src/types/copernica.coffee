@@ -374,13 +374,13 @@ class Copernica_Profile extends Copernica_Base
 			createIfNeeded = ( profile, next ) =>
 				console.log '~~ create if needed'
 				profile = [].concat profile
-				if profile.length is 0 and profile[0] isnt undefined
+				if profile.length is 0 and profile[0] is undefined
 					console.log '~~ create'
 					@_create _.extend( id, fieldsToAdd ), subprofileOptions or {}, ( err, data ) ->
 						console.log '~~ create cb'
 						next err, data
 				else
-					console.log '~~ update', profile
+					console.log '~~ update', profile, profile[0]
 					profile = profile.shift( )
 					profile._fields = {}
 					for row in [].concat profile.fields.pair
