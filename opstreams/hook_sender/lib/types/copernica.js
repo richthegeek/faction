@@ -474,6 +474,7 @@
           return _this._search(id, subprofileOptions || {}, next);
         }, createIfNeeded = function(profile, next) {
           var row, _i, _len, _ref;
+          profile = [].concat(profile);
           if (profile.length === 0) {
             return _this._create(_.extend(id, fieldsToAdd), subprofileOptions || {}, function(err, data) {
               return next(err, data);
@@ -789,14 +790,17 @@
               row = collections[i];
               collectionsMap[row.name] = i;
             }
+            console.log('collections map', collectionsMap);
             return async.map(profile.devices, (function(device, next2) {
               return async.map(device.sessions, (function(session, next3) {
                 var pvid;
                 pvid = 0;
                 return async.map(session.actions, (function(action, next4) {
                   var fields, id;
+                  console.log("\n\n", action);
                   switch (action._value.type) {
                     case 'page':
+                      console.log('page');
                       id = {
                         'pageview_id': ++pvid,
                         'visit_id': session._id
@@ -811,6 +815,7 @@
                       };
                       break;
                     case 'download':
+                      console.log('download');
                       id = {
                         'DownloadID': "" + session.id + "-" + (++pvid)
                       };
@@ -823,6 +828,7 @@
                       };
                       break;
                     case 'form':
+                      console.log('form');
                       id = {
                         'fillID': "" + session.id + "-" + (++pvid)
                       };
@@ -835,8 +841,10 @@
                       };
                       break;
                     default:
+                      console.log('else', action._value.type);
                       return next4();
                   }
+                  options.id = copernica.currentProfile.id;
                   return copernica.subprofile(id, fields, options, next4);
                 }), function(err, data) {
                   var fields, id;
