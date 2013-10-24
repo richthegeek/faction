@@ -477,7 +477,7 @@
           var row, _i, _len, _ref;
           console.log('~~ create if needed');
           profile = [].concat(profile);
-          if (profile.length === 0 && profile[0] === void 0) {
+          if (profile.length === 0 || profile[0] === void 0) {
             console.log('~~ create');
             return _this._create(_.extend(id, fieldsToAdd), subprofileOptions || {}, function(err, data) {
               console.log('~~ create cb');

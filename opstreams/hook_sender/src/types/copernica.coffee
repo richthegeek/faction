@@ -374,7 +374,7 @@ class Copernica_Profile extends Copernica_Base
 			createIfNeeded = ( profile, next ) =>
 				console.log '~~ create if needed'
 				profile = [].concat profile
-				if profile.length is 0 and profile[0] is undefined
+				if profile.length is 0 or profile[0] is undefined
 					console.log '~~ create'
 					@_create _.extend( id, fieldsToAdd ), subprofileOptions or {}, ( err, data ) ->
 						console.log '~~ create cb'
