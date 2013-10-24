@@ -257,7 +257,7 @@
       }
       defaults = {
         'state': {},
-        'url': 'http://mailmanager.livelinknewmedia.com/',
+        'url': 'http://soapweb6.copernica.nl',
         'credentials': {
           'username': null,
           'account': null,
@@ -529,9 +529,6 @@
     };
 
     Copernica_Profile.prototype._search_verify = function(query) {
-      if (!((query.user_id != null) || (query.email != null))) {
-        return error('invalidOptions', 'Must contain either "user_id" or "email"');
-      }
       return false;
     };
 
@@ -564,8 +561,10 @@
           'value': val
         });
       }
+      console.log('preSearch', params);
       return this.request(this.soapMethods.search, params, function(err, data) {
         var row, _i, _len, _ref;
+        console.log('searchResults', err, data);
         data = [].concat(data.result.items[_this.returnProperties.search]);
         for (_i = 0, _len = data.length; _i < _len; _i++) {
           row = data[_i];
@@ -578,9 +577,6 @@
     };
 
     Copernica_Profile.prototype._create_verify = function(fields) {
-      if (!fields.user_id || !fields.email) {
-        return error('invalidOptions', 'Must contain at least "user_id" and "email"');
-      }
       return false;
     };
 
@@ -764,13 +760,16 @@
         }
       ], callback);
     },
-    'exec': function(options, data, callback) {
+    'exec': function(hook, data, callback) {
+      var options;
+      options = hook.options;
       data = [].concat(data);
       return async.map(data, (function(profile, next) {
         var addSessions, getCollections, loadCopernica, updateProfile;
         return async.waterfall([
           loadCopernica = function(next1) {
             var copProfile;
+            console.log('loadCopernica');
             return copProfile = new Copernica_Profile(options, next1);
           }, updateProfile = function(copernica, next1) {
             var data_fields, id_fields;
@@ -781,13 +780,16 @@
               'uid': profile._id,
               'LeadScore': profile.score
             };
+            console.log('updateProfile', id_fields, data_fields);
             return copernica.profile(id_fields, data_fields, next1);
           }, getCollections = function(copernica, next1) {
+            console.log('getCollectons');
             return copernica.getCollections(function(err, collections) {
               return next1(err, copernica, collections);
             });
           }, addSessions = function(copernica, collections, next1) {
             var collectionsMap, i, row;
+            console.log('addSessions');
             collectionsMap = {};
             for (i in collections) {
               row = collections[i];

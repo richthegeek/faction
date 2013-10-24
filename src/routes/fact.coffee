@@ -36,20 +36,24 @@ module.exports = (server) ->
 
 	# retrieve a specific fact by ID
 	server.get '/facts/:fact-type/fact_def/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
-		req.body.with ?= []
-		req.body.path ?= 'this'
-
-		req.body.with = [].concat.call [], req.body.with
-
-		if 'this' isnt req.body.path.substring 0, 4
-			req.body.path = 'this.' + req.body.path
+		req.body.with = [].concat.call [], req.body.with ? {}
+		req.body.map ?= false
 
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
 			if err or not found
 				return res.notFound 'fact'
 			async.map req.body.with, @data.get.bind(@data), () =>
-				@data.eval req.body.path, (err, result) =>
-					res.send result
+				if not req.body.map
+					return res.send @data
+
+				obj = {}
+				get = (arg, next) =>
+					[key, path] = arg
+					@data.eval path, (err, result) ->
+						return next err, obj[key] = result
+
+				async.map ([key, path] for key, path of req.body.map), get, () =>
+					next res.send obj
 
 	# update a fact by ID.
 	server.post '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->

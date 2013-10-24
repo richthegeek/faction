@@ -11,7 +11,7 @@
     lib = path.resolve(__dirname, '../../../lib');
     models = lib + '/models/';
     Account_Model = require(models + 'account');
-    Fact_Model = require(models + 'fact');
+    Fact_Model = require(models + 'fact_deferred');
     config.models = {
       account: Account_Model
     };
@@ -53,24 +53,45 @@
       fns.push(function() {
         var account, hook, next, skip, _i;
         account = arguments[0], hook = arguments[1], skip = 4 <= arguments.length ? __slice.call(arguments, 2, _i = arguments.length - 1) : (_i = 2, []), next = arguments[_i++];
-        return new Fact_Model(account, row.fact_type, function() {
-          self.table = this.table;
-          return this.table.findOne({
-            _id: row.data._id
-          }, function(err, fact) {
-            return next(err, account, hook, fact);
+        if (hook.mode === 'snapshot') {
+          return new Fact_Model(account, row.fact_type, function() {
+            var _ref;
+            hook["with"] = [].concat.call([], (_ref = hook["with"]) != null ? _ref : []);
+            if (hook.path == null) {
+              hook.path = 'this';
+            }
+            if ('this' !== hook.path.substring(0, 4)) {
+              hook.path = 'this.' + hook.path;
+            }
+            self.table = this.table;
+            return this.load({
+              _id: row.fact_id
+            }, function(err, found) {
+              var _this = this;
+              if (err || !found) {
+                return callback('Fact not found');
+              }
+              return async.map(hook["with"], this.data.get.bind(this.data), function() {
+                return _this.data["eval"](hook.path, function(err, result) {
+                  return next(err, account, hook, JSON.parse(JSON.stringify(result)));
+                });
+              });
+            });
           });
-        });
+        } else {
+          return next(err, account, hook, row.data);
+        }
       });
       return async.waterfall(fns, function(err, account, hook, fact) {
-        var cb, hookService, options;
+        var cb, expired, file, hookService;
         if (err) {
           return callback(err);
         }
         if (!fact) {
           return callback();
         }
-        if (row.data._updated !== fact._updated) {
+        expired = hook.mode !== 'snapshot' && row.data._updated !== fact._updated;
+        if (expired) {
           console.log('Expired');
           return next();
         }
@@ -87,20 +108,23 @@
         if (hook.type == null) {
           hook.type = 'url';
         }
-        switch (hook.type) {
-          case 'url':
-            options = {
-              method: 'POST',
-              uri: hook.url,
-              json: row.data
-            };
-            return request.post(options, cb);
-          default:
-            hookService = require("./types/" + hook.type);
-            if (hook.type === 'copernica') {
-              options = hook.options;
+        file = path.resolve(__dirname, './types') + '/' + hook.type;
+        hookService = require(file);
+        try {
+          return hookService.exec(hook, fact, function(err, result) {
+            if (err) {
+              console.log(err);
+              console.log(JSON.stringify(err));
+              throw err;
             }
-            return hookService.exec(options, row.data, cb);
+            console.log('Callback', result);
+            return;
+            return cb(err, result);
+          });
+        } catch (_error) {
+          err = _error;
+          console.log('Shit code alert');
+          console.log(err);
         }
       });
     };

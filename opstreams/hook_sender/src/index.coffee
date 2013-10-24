@@ -9,7 +9,7 @@ module.exports = (stream, config, row) ->
 	models = lib + '/models/'
 
 	Account_Model = require models + 'account'
-	Fact_Model = require models + 'fact'
+	Fact_Model = require models + 'fact_deferred' # change back to fact later
 	config.models = account: Account_Model
 
 	return (row, callback) ->
@@ -39,17 +39,35 @@ module.exports = (stream, config, row) ->
 				next 'Unknown hook id'
 
 		fns.push (account, hook, skip..., next) ->
-			new Fact_Model account, row.fact_type, () ->
-				self.table = @table
-				@table.findOne {_id: row.data._id}, (err, fact) ->
-					next err, account, hook, fact
+
+			if hook.mode is 'snapshot'
+				new Fact_Model account, row.fact_type, () ->
+					hook.with = [].concat.call [], hook.with ? []
+
+					hook.path ?= 'this'
+					if 'this' isnt hook.path.substring 0, 4
+						hook.path = 'this.' + hook.path
+
+					self.table = @table
+					@load {_id: row.fact_id}, (err, found) ->
+						if err or not found
+							return callback 'Fact not found'
+
+						async.map hook.with, @data.get.bind(@data), () =>
+							@data.eval hook.path, (err, result) =>
+								# double-JSON to strip getters at this stage
+								next err, account, hook, JSON.parse JSON.stringify result
+
+			else
+				next err, account, hook, row.data
 
 		return async.waterfall fns, (err, account, hook, fact) =>
 			if err then return callback err
 			if not fact then return callback()
 
 			# verify the fact has not been updated.
-			if row.data._updated isnt fact._updated
+			expired = hook.mode isnt 'snapshot' and row.data._updated isnt fact._updated
+			if expired
 				console.log 'Expired'
 				return next()
 
@@ -66,21 +84,22 @@ module.exports = (stream, config, row) ->
 				}
 
 			hook.type ?= 'url'
-			switch hook.type
-				when 'url'
-					options =
-						method: 'POST'
-						uri: hook.url,
-						json: row.data
+			# TODO: make this way more clever
+			file = path.resolve(__dirname, './types') + '/' + hook.type
+			hookService = require file
 
-					# try send the data...
-					request.post options, cb
-				else
-					# TODO: make this way more clever
-					hookService = require "./types/#{hook.type}"
+			try
+				hookService.exec hook, fact, (err, result) ->
+					if err
+						console.log err
+						console.log JSON.stringify err
+						throw err
 
-					# TODO: less hardcoded way
-					if hook.type is 'copernica'
-						options = hook.options
+					console.log 'Callback', result
+					return
 
-					hookService.exec options, row.data, cb
+					cb err, result
+			catch err
+				console.log 'Shit code alert'
+				console.log err
+				return

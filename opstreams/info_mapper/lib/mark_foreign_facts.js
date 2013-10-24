@@ -29,7 +29,7 @@ module.exports = function(stream, config, row) {
           }
           return next(null, ids.map(function(id) {
             return {
-              id: id,
+              id: id._id,
               type: fk.fact_type,
               time: +(new Date)
             };

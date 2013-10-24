@@ -183,19 +183,34 @@ module.exports = function(stream, config) {
                 }
               }
               fact.set('_updated', new Date);
-              hooks = hooks.filter(function(hook) {
-                return hook.fact_type === row._type;
+              data = hooks.filter(function(hook) {
+                return hook.fact_type === info.model.type;
               });
-              data = hooks.map(function(hook) {
-                return {
+              data = data.map(function(hook) {
+                if (!fact._id) {
+                  return null;
+                }
+                row = {
                   hook_id: hook.hook_id,
                   fact_type: hook.fact_type,
-                  data: fact
+                  fact_id: fact._id
                 };
+                if (hook.mode !== 'snapshot') {
+                  row.fact_id = (Math.round(999 * Math.random())) + (+(new Date));
+                  row.data = fact;
+                }
+                return row;
               });
+              data = data.filter(Boolean);
               if (data.length > 0) {
-                stream.db.collection('hooks_pending').insert(data, function() {
-                  return console.log('Hooks', arguments);
+                stream.db.collection('hooks_pending').insert(data, function(err) {
+                  if (err) {
+                    if (err.code === 11000) {
+                      return;
+                    }
+                    console.error('Add hook error', arguments);
+                    throw err;
+                  }
                 });
               }
               for (key in set.foreign_keys) {
