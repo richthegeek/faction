@@ -775,7 +775,7 @@
             };
             data_fields = {
               'uid': profile._id,
-              'LeadScore': profile.score
+              'LeadScore': profile.score || 0
             };
             return copernica.profile(id_fields, data_fields, next1);
           }, getCollections = function(copernica, next1) {
@@ -855,7 +855,13 @@
                 });
               }), next2);
             }), function(err, results) {
-              return next1(err, results, copernica);
+              var meaningfulResult;
+              meaningfulResult = {
+                'profile_id': profile._id,
+                'copernica_id': copernica.profile.id,
+                'time': +(new Date)
+              };
+              return next1(err, meaningfulResult, copernica);
             });
           }
         ], next);
