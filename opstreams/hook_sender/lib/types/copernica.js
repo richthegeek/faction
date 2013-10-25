@@ -923,12 +923,20 @@
                   options.id = copernica.currentProfile.id;
                   return copernica.subprofile(id, fields, options, next4);
                 }), function(err, data) {
-                  var fields, id;
+                  var fields, id, times, _i, _len, _ref;
+                  times = [];
+                  _ref = session.actions;
+                  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                    row = _ref[_i];
+                    if (row._time) {
+                      times.push(new Date(row._time));
+                    }
+                  }
                   id = {
                     'Session_ID': session._id
                   };
                   fields = {
-                    'Length_of_visit': humanTime((new Date(session.actions[session.actions.length - 1]._time) - new Date(session.actions[0]._time)) / 1000),
+                    'Length_of_visit': humanTime((Math.max.apply(Math, times) - Math.min.apply(Math, times)) / 1000),
                     'Number_of_pages_visited': session.actions.length,
                     'Start_time': ISOtoCopernica(session.actions[0]._time)
                   };

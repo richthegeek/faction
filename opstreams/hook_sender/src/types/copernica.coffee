@@ -722,10 +722,14 @@ module.exports =
 								copernica.subprofile id, fields, options, next4
 
 							), ( err, data ) ->
+								times = []
+								for row in session.actions when row._time
+									times.push new Date row._time
+
 								id =
 									'Session_ID': session._id
 								fields =
-									'Length_of_visit': humanTime ( new Date( session.actions[session.actions.length - 1]._time ) - new Date( session.actions[0]._time ) ) / 1000
+									'Length_of_visit': humanTime ( Math.max.apply( Math, times ) - Math.min.apply( Math, times ) ) / 1000
 									'Number_of_pages_visited': session.actions.length
 									'Start_time': ISOtoCopernica session.actions[0]._time
 								options =
