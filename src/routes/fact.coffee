@@ -31,31 +31,17 @@ module.exports = (server) ->
 	# retrieve a specific fact by ID
 	server.get '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, () ->
-			@updateFields () ->
-				res.send @export()
+			res.send @export()
 
 	# retrieve a specific fact by ID
 	server.get '/facts/:fact-type/fact_def/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
-		req.body.with = [].concat.call [], req.body.with ? {}
-		req.body.map ?= false
-
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
 			if err or not found
 				return res.notFound 'fact'
 
-			async.map req.body.with, @data.get.bind(@data), () =>
-				if not req.body.map
-					return res.send @data
+			@withMap req.body.with, req.body.map, (err, result) =>
+				next res.send result
 
-				@addShim () =>
-					obj = {}
-					get = (arg, next) =>
-						[key, path] = arg
-						@data.eval path, (err, result) ->
-							return next null, obj[key] = result
-
-					async.map ([key, path] for key, path of req.body.map), get, () =>
-						next res.send obj
 
 	# update a fact by ID.
 	server.post '/facts/:fact-type/fact/:fact-id', Fact_Model.route, (req, res, next) ->
@@ -82,4 +68,23 @@ module.exports = (server) ->
 				status: 'ok',
 				statusText: 'The fact was deleted.',
 				deleted: count | 0
+			}
+
+	# mark a fact as updated...
+	server.post '/facts/:fact-type/update/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
+		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
+			return next res.notFound 'user' if not found
+			@markUpdated () =>
+				next res.send {
+					status: "ok",
+					statusText: "This fact has been marked as updated.",
+					fact: @export()
+				}
+
+	server.post '/facts/:fact-type/update', Fact_deferred_Model.route, (req, res, next) ->
+		req.model.markUpdatedFull ErrorHandler next, (err, ids) ->
+			next res.send {
+				status: "ok",
+				statusText: "All facts of this type have been marked as updated.",
+				facts: ids
 			}

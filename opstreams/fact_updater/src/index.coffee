@@ -60,13 +60,12 @@ module.exports = (stream, config) ->
 						evaluate = (arr, next) =>
 							[key, props] = arr
 							# evaluate the value
-							@data.eval props.eval, (err, result) =>
+							@withMap [], props.map, false, (err, map) =>
+								@data.eval props.eval, map, (err, result) =>
+									result = result ? props.default ? null
 
-								if not result and props.default?
-									result = props.default
+									console.log props.eval, map, result
 
-								# evaluate the key, if it's deferred we'll need it.
-								@data.eval 'this.' + key, (err) =>
 									# send it forward
 									next null, {key: key, value: result}
 

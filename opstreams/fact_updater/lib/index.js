@@ -86,11 +86,11 @@ module.exports = function(stream, config) {
             })();
             evaluate = function(arr, next) {
               key = arr[0], props = arr[1];
-              return _this.data["eval"](props["eval"], function(err, result) {
-                if (!result && (props["default"] != null)) {
-                  result = props["default"];
-                }
-                return _this.data["eval"]('this.' + key, function(err) {
+              return _this.withMap([], props.map, false, function(err, map) {
+                return _this.data["eval"](props["eval"], map, function(err, result) {
+                  var _ref;
+                  result = (_ref = result != null ? result : props["default"]) != null ? _ref : null;
+                  console.log(props["eval"], map, result);
                   return next(null, {
                     key: key,
                     value: result
@@ -170,3 +170,7 @@ module.exports = function(stream, config) {
     });
   };
 };
+
+/*
+//@ sourceMappingURL=index.map
+*/
