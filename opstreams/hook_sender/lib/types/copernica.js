@@ -471,14 +471,20 @@
       }
       return async.waterfall([
         loadProfile = function(next) {
+          console.log('~~ load profile');
           return _this._search(id, subprofileOptions || {}, next);
         }, createIfNeeded = function(profile, next) {
           var row, _i, _len, _ref;
-          if (profile.length === 0) {
+          console.log('~~ create if needed');
+          profile = [].concat(profile);
+          if (profile.length === 0 || profile[0] === void 0) {
+            console.log('~~ create');
             return _this._create(_.extend(id, fieldsToAdd), subprofileOptions || {}, function(err, data) {
+              console.log('~~ create cb');
               return next(err, data);
             });
           } else {
+            console.log('~~ update', profile, profile[0]);
             profile = profile.shift();
             profile._fields = {};
             _ref = [].concat(profile.fields.pair);
@@ -491,11 +497,13 @@
               }
             }
             return _this._update(profile.id, fieldsToAdd, function(err, data) {
+              console.log('~~ update cb');
               return next(err, profile);
             });
           }
         }
       ], function(err, profile) {
+        console.log('~~ do callback');
         if (!subprofileOptions) {
           _this.currentProfile = profile;
           return callback(err, _this);
@@ -513,6 +521,7 @@
       if (options == null) {
         options = {};
       }
+      console.log('** in subprofile');
       opts = {
         'state': {
           'client': this.client,
@@ -522,9 +531,11 @@
         }
       };
       return new Copernica_Subprofile(opts, function(err, obj) {
-        return obj.profile(id, fieldsToAdd, callback, _.extend(options, {
+        console.log('** init');
+        obj.profile(id, fieldsToAdd, callback, _.extend(options, {
           'id': opts.state.currentProfile.id
         }));
+        return console.log('** in post subprofile');
       });
     };
 
@@ -789,14 +800,17 @@
               row = collections[i];
               collectionsMap[row.name] = i;
             }
+            console.log('collections map', collectionsMap);
             return async.map(profile.devices, (function(device, next2) {
               return async.map(device.sessions, (function(session, next3) {
                 var pvid;
                 pvid = 0;
                 return async.map(session.actions, (function(action, next4) {
                   var fields, id;
+                  console.log("\n\n", action);
                   switch (action._value.type) {
                     case 'page':
+                      console.log('page');
                       id = {
                         'pageview_id': ++pvid,
                         'visit_id': session._id
@@ -811,6 +825,7 @@
                       };
                       break;
                     case 'download':
+                      console.log('download');
                       id = {
                         'DownloadID': "" + session.id + "-" + (++pvid)
                       };
@@ -823,6 +838,7 @@
                       };
                       break;
                     case 'form':
+                      console.log('form');
                       id = {
                         'fillID': "" + session.id + "-" + (++pvid)
                       };
@@ -835,8 +851,10 @@
                       };
                       break;
                     default:
+                      console.log('else', action._value.type);
                       return next4();
                   }
+                  options.id = copernica.currentProfile.id;
                   return copernica.subprofile(id, fields, options, next4);
                 }), function(err, data) {
                   var fields, id;

@@ -368,13 +368,19 @@ class Copernica_Profile extends Copernica_Base
 	profile: ( id, fieldsToAdd = {}, callback, subprofileOptions = false ) ->
 		async.waterfall [
 			loadProfile = ( next ) =>
+				console.log '~~ load profile'
 				@_search id, subprofileOptions or {}, next
 
 			createIfNeeded = ( profile, next ) =>
-				if profile.length is 0
+				console.log '~~ create if needed'
+				profile = [].concat profile
+				if profile.length is 0 or profile[0] is undefined
+					console.log '~~ create'
 					@_create _.extend( id, fieldsToAdd ), subprofileOptions or {}, ( err, data ) ->
+						console.log '~~ create cb'
 						next err, data
 				else
+					console.log '~~ update', profile, profile[0]
 					profile = profile.shift( )
 					profile._fields = {}
 					for row in [].concat profile.fields.pair
@@ -384,10 +390,12 @@ class Copernica_Profile extends Copernica_Base
 							profile._fields[row.key] = row.value
 
 					@_update profile.id, fieldsToAdd, ( err, data ) ->
+						console.log '~~ update cb'
 						# TODO: verify success
 						next err, profile
 
 		], ( err, profile ) =>
+			console.log '~~ do callback'
 			if not subprofileOptions
 				@currentProfile = profile
 				callback err, @
@@ -395,6 +403,7 @@ class Copernica_Profile extends Copernica_Base
 				callback err, profile
 
 	subprofile: ( id, fieldsToAdd = {}, options = {}, callback ) ->
+		console.log '** in subprofile'
 		opts =
 			'state':
 				'client': @client
@@ -403,8 +412,10 @@ class Copernica_Profile extends Copernica_Base
 				'currentProfile': @currentProfile
 
 		new Copernica_Subprofile opts, ( err, obj ) ->
+			console.log '** init'
 			obj.profile id, fieldsToAdd, callback, _.extend options,
 				'id': opts.state.currentProfile.id
+			console.log '** in post subprofile'
 
 # 'Private'
 	# verfiy _search query
@@ -614,14 +625,17 @@ module.exports =
 					collectionsMap = {}
 					for i, row of collections
 						collectionsMap[row.name] = i
+					console.log 'collections map', collectionsMap
 
 					async.map profile.devices, ( ( device, next2 ) ->
 						async.map device.sessions, ( ( session, next3 ) ->
 							# TODO: this is pretty hacky. need an ID on actions
 							pvid = 0
 							async.map session.actions, ( ( action, next4 ) ->
+								console.log "\n\n", action
 								switch action._value.type
 									when 'page'
+										console.log 'page'
 										id =
 											'pageview_id': ++pvid
 											'visit_id': session._id
@@ -632,6 +646,7 @@ module.exports =
 										options =
 											'collection': collections[collectionsMap['Pages']]
 									when 'download'
+										console.log 'download'
 										id =
 											'DownloadID': "#{session.id}-#{++pvid}"
 										fields =
@@ -640,6 +655,7 @@ module.exports =
 										options =
 											'collection': collections[collectionsMap['Downloads']]
 									when 'form'
+										console.log 'form'
 										id =
 											'fillID': "#{session.id}-#{++pvid}"
 										fields =
@@ -648,7 +664,10 @@ module.exports =
 										options =
 											'collection': collections[collectionsMap['Forms']]
 									else
+										console.log 'else', action._value.type
 										return next4( )
+
+								options.id = copernica.currentProfile.id
 
 								copernica.subprofile id, fields, options, next4
 
