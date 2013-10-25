@@ -16,6 +16,51 @@ error = do ( ) ->
 		'message': errorMessages[code]
 		'extraInfo': extra ? undefined
 
+# Download file extensions. used to determine if a page action is a download
+downloadFileTypes = ['pdf', 'zip']
+
+###
+# Turns into a human readable time. input in seconds
+###
+timeNouns = ['seconds', 'minutes', 'hours', 'days']
+humanTime = ( x ) ->
+	time = []
+	time.push Math.round ( x /= 60 ) % 60
+	time.push Math.round ( x /= 60 ) % 60
+	time.push Math.round ( x /= 24 ) % 24
+	time.push Math.round x
+
+	index = time.length
+	while time[--index] is 0 and index > 1
+		true
+
+	"#{time[index]} #{timeNouns[index]}, #{time[index - 1]} #{timeNouns[index - 1]}"
+
+###
+# Converts an ISO formatted date into Copernica Style
+###
+ISOtoCopernica = ( str ) -> str.replace( 'T', ' ' ).replace( '.000Z', '' )
+
+###
+# Simple hash code of a string
+###
+String.prototype.hashCode = ( str ) ->
+    hash = 0
+    return hash if str.length is 0
+    for i in [0...str.length]
+        chr = str.charCodeAt i
+        hash = ( ( hash << 5 ) - hash ) + chr
+        hash |= 0 # Convert to 32bit integer
+    hash
+
+###
+# Creates an ID from an ISO date and a piece of identifying information
+###
+actionId = ( time, identifier ) ->
+	time = ISOtoCopernica( time ).replace( ':', '' ).replace( ' ', '' ).replace( '-', '' )
+	identifier = identifier.hashCode( )
+	"#{time}-#{identifier}"
+
 ###
 # Copernica Field Definitions
 # name - Name of the field
@@ -633,34 +678,39 @@ module.exports =
 							pvid = 0
 							async.map session.actions, ( ( action, next4 ) ->
 								console.log "\n\n", action
+
+								# TODO: this is interim code, remove it at some point
+								if action._value.type is 'page' and action._value.url.slice( -3 ) in downloadFileTypes
+									action._value.type = 'download'
+
 								switch action._value.type
 									when 'page'
 										console.log 'page'
 										id =
-											'pageview_id': ++pvid
+											'pageview_id': actionId action._time, action._value.url
 											'visit_id': session._id
 										fields =
 											'Page_title': action._value.title or ''
 											'Page_URL': action._value.url
-											'Time': action._time
+											'Time': ISOtoCopernica action._time
 										options =
 											'collection': collections[collectionsMap['Pages']]
 									when 'download'
 										console.log 'download'
 										id =
-											'DownloadID': "#{session.id}-#{++pvid}"
+											'DownloadID': actionId action._time, action._value.url
 										fields =
 											'DownloadName': action._value.url
-											'Time': action._time
+											'Time': ISOtoCopernica action._time
 										options =
 											'collection': collections[collectionsMap['Downloads']]
 									when 'form'
 										console.log 'form'
 										id =
-											'fillID': "#{session.id}-#{++pvid}"
+											'fillID': actionId action._time, action._value.form_id
 										fields =
 											'FormName': action._value.form_id
-											'Time': action._time
+											'Time': ISOtoCopernica action._time
 										options =
 											'collection': collections[collectionsMap['Forms']]
 									else
@@ -675,9 +725,9 @@ module.exports =
 								id =
 									'Session_ID': session._id
 								fields =
-									'Length_of_visit': ( new Date( session.actions[session.actions.length - 1]._time ) - new Date( session.actions[0]._time ) ) / 1000
+									'Length_of_visit': humanTime ( new Date( session.actions[session.actions.length - 1]._time ) - new Date( session.actions[0]._time ) ) / 1000
 									'Number_of_pages_visited': session.actions.length
-									'Start_time': session.actions[0]._time
+									'Start_time': ISOtoCopernica session.actions[0]._time
 								options =
 									'collection': collections[collectionsMap['Visits']]
 								copernica.subprofile id, fields, options, next3
