@@ -1,4 +1,6 @@
-require('source-map-support').install()
+try
+	require('source-map-support').install()
+catch e then null
 
 fs = require 'fs'
 global.restify = restify = require 'restify'
