@@ -70,7 +70,8 @@ module.exports = function(stream, config, row) {
               return callback('Fact not found');
             }
             return this.withMap(hook["with"], hook.map, false, function(err, result) {
-              return next(err, account, hook, JSON.parse(JSON.stringify(result)));
+              result = JSON.parse(JSON.stringify(result));
+              return next(err, account, hook, result);
             });
           });
         });
@@ -123,3 +124,7 @@ module.exports = function(stream, config, row) {
     });
   };
 };
+
+/*
+//@ sourceMappingURL=index.map
+*/

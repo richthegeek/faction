@@ -90,7 +90,6 @@ module.exports = function(stream, config) {
                 return _this.data["eval"](props["eval"], map, function(err, result) {
                   var _ref;
                   result = (_ref = result != null ? result : props["default"]) != null ? _ref : null;
-                  console.log(props["eval"], map, result);
                   return next(null, {
                     key: key,
                     value: result

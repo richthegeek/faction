@@ -55,7 +55,8 @@ module.exports = (stream, config, row) ->
 
 						@withMap hook.with, hook.map, false, (err, result) ->
 							# double-JSON to strip getters at this stage
-							next err, account, hook, JSON.parse JSON.stringify result
+							result = JSON.parse JSON.stringify result
+							next err, account, hook, result
 
 			else
 				next err, account, hook, row.data

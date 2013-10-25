@@ -63,9 +63,6 @@ module.exports = (stream, config) ->
 							@withMap [], props.map, false, (err, map) =>
 								@data.eval props.eval, map, (err, result) =>
 									result = result ? props.default ? null
-
-									console.log props.eval, map, result
-
 									# send it forward
 									next null, {key: key, value: result}
 

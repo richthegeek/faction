@@ -133,7 +133,6 @@ module.exports = class Fact_deferred_Model extends Model
 
 		_with = [].concat.call [], _with ? {}
 		map = map or {}
-		map._id ?= 'this._id'
 
 		async.map _with, @data.get.bind(@data), () =>
 			if not map
@@ -155,8 +154,14 @@ module.exports = class Fact_deferred_Model extends Model
 					@data.eval path, (err, result) ->
 						return next null, obj[key] = result or def
 
-				async.map ([key, path] for key, path of map), get, () =>
-					callback null, obj
+				maps = ([key, path] for key, path of map)
+				if maps.length > 0
+					maps.unshift ['_id', 'this._id']
+
+					async.map maps, get, () =>
+						callback null, obj
+				else
+					callback null, @data
 
 
 	getSettings: (callback) ->
