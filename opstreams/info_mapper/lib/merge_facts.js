@@ -57,3 +57,7 @@ module.exports = function(stream, config, row) {
     return new_fact;
   };
 };
+
+/*
+//@ sourceMappingURL=merge_facts.map
+*/

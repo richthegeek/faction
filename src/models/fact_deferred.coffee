@@ -29,6 +29,31 @@ module.exports = class Fact_deferred_Model extends Model
 	removeFull: (callback) ->
 		@table.drop callback
 
+	markUpdated: (callback) ->
+		if @data._id
+			@db.collection('fact_updates').insert {
+				type: @type,
+				id: @data._id,
+				time: +new Date
+			}, callback
+		else
+			callback()
+
+	markUpdatedFull: (callback) ->
+		type = @type
+		collection = @db.collection('fact_updates')
+		# get all ids
+		@table.aggregate {$group: {_id: null, ids: $push: '$_id'}}, (err, result) ->
+			ids = result[0].ids
+			insert = (id, next) =>
+				collection.insert {
+					type: type,
+					id: id,
+					time: +new Date
+				}, next
+			async.map ids, insert, (err, result) ->
+				id = (result or []).filter((v) -> v?[0]?.id?).map((v) -> v[0].id)
+				callback err, id
 
 	export: ->
 		if @data.data
@@ -100,6 +125,38 @@ module.exports = class Fact_deferred_Model extends Model
 
 				@data = fact
 				callback.call @, err, fact
+
+	withMap: (_with, map, shim, callback) ->
+		args = Array::slice.call(arguments, 2)
+		callback = args.pop()
+		shim = args.pop() or true
+
+		_with = [].concat.call [], _with ? {}
+		map = map or {}
+		map._id ?= 'this._id'
+
+		async.map _with, @data.get.bind(@data), () =>
+			if not map
+				return res.send @data
+
+			next = (cb) -> cb()
+			next = @addShim if shim
+
+			next () =>
+				obj = {}
+				get = (arg, next) =>
+					[key, path] = arg
+
+					def = null
+					if Array.isArray path
+						def = path[1]
+						path = path[0]
+
+					@data.eval path, (err, result) ->
+						return next null, obj[key] = result or def
+
+				async.map ([key, path] for key, path of map), get, () =>
+					callback null, obj
 
 
 	getSettings: (callback) ->

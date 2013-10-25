@@ -197,7 +197,7 @@ module.exports = function(stream, config) {
         for (key in set.foreign_keys) {
           info.fact.del(key);
         }
-        fact = mergeFacts(set, info.fact.data, info.info);
+        fact = mergeFacts(set, info.fact, info.info);
         _ref1 = set.field_modes;
         for (key in _ref1) {
           mode = _ref1[key];
@@ -253,3 +253,7 @@ module.exports = function(stream, config) {
     });
   };
 };
+
+/*
+//@ sourceMappingURL=index.map
+*/

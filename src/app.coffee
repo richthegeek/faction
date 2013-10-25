@@ -1,3 +1,7 @@
+try
+	require('source-map-support').install()
+catch e then null
+
 fs = require 'fs'
 global.restify = restify = require 'restify'
 crypto = require 'crypto'
@@ -39,11 +43,12 @@ global.ErrorHandler = (next, good) -> (err) ->
 # handle errors that are produced by Exceptions.
 # this makes it easier to produce errors in routes.
 server.on 'uncaughtException', (req, res, route, err) ->
-	console.error err.stack
+	# console.error err.stack
 	res.send 500, {
 		status: "error",
 		statusText: err.message or err
 	}
+
 server.on 'NotFound', (req, res, next) -> next res.send 404, status: 'error', statusText: 'Endpoint not found'
 server.on 'MethodNotAllowed', (req, res, next) -> next res.send 404, status: 'error', statusText: 'Endpoint not found'
 server.on 'VersionNotAllowed', (req, res, next) -> next res.send 404, status: 'error', statusText: 'Endpoint not found'

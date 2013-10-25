@@ -53,10 +53,9 @@ module.exports = (stream, config, row) ->
 						if err or not found
 							return callback 'Fact not found'
 
-						async.map hook.with, @data.get.bind(@data), () =>
-							@data.eval hook.path, (err, result) =>
-								# double-JSON to strip getters at this stage
-								next err, account, hook, JSON.parse JSON.stringify result
+						@withMap hook.with, hook.map, false, (err, result) ->
+							# double-JSON to strip getters at this stage
+							next err, account, hook, JSON.parse JSON.stringify result
 
 			else
 				next err, account, hook, row.data
