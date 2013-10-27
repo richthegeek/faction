@@ -89,7 +89,23 @@ module.exports = function(stream, config) {
               key = arr[0], props = arr[1];
               context = {
                 http: require('./http'),
-                q: require('q')
+                q: require('q'),
+                fact: _this.data,
+                load: function(type, id) {
+                  var defer;
+                  defer = require('q').defer();
+                  new Fact_Model(self.accountModel, type, function() {
+                    return this.load({
+                      _id: id
+                    }, function(err, found) {
+                      if (err || !found) {
+                        return defer.reject(err || 'Not found');
+                      }
+                      return defer.resolve(this.data);
+                    });
+                  });
+                  return defer.promise;
+                }
               };
               return _this.withMap([], props.map, context, function(err, map) {
                 var k, v;
