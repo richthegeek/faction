@@ -71,8 +71,12 @@
                 return callback('Fact not found');
               }
               return this.withMap(hook["with"], hook.map, false, function(err, result) {
+<<<<<<< HEAD
                 result = JSON.parse(JSON.stringify(result));
                 return next(err, account, hook, result);
+=======
+                return next(err, account, hook, JSON.parse(JSON.stringify(result)));
+>>>>>>> 9a264bfc0d654abf593e741aa3fba1235c747437
               });
             });
           });
@@ -115,8 +119,11 @@
               console.log(JSON.stringify(err));
               throw err;
             }
+<<<<<<< HEAD
             console.log('DONE', result);
             return;
+=======
+>>>>>>> 9a264bfc0d654abf593e741aa3fba1235c747437
             return cb(err, result);
           });
         } catch (_error) {

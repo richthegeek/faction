@@ -85,9 +85,18 @@ module.exports = function(stream, config) {
               return _results;
             })();
             evaluate = function(arr, next) {
+              var context;
               key = arr[0], props = arr[1];
-              return _this.withMap([], props.map, false, function(err, map) {
-                map.http = require('./http');
+              context = {
+                http: require('./http'),
+                q: require('q')
+              };
+              return _this.withMap([], props.map, context, function(err, map) {
+                var k, v;
+                for (k in context) {
+                  v = context[k];
+                  map[k] = v;
+                }
                 return _this.data["eval"](props["eval"], map, function(err, result) {
                   var _ref;
                   result = (_ref = result != null ? result : props["default"]) != null ? _ref : null;

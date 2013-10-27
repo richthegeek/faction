@@ -60,9 +60,12 @@ module.exports = (stream, config) ->
 						evaluate = (arr, next) =>
 							[key, props] = arr
 							# evaluate the value
-							@withMap [], props.map, false, (err, map) =>
+							context =
+								http: require('./http')
+								q: require('q')
 
-								map.http = require('./http')
+							@withMap [], props.map, context, (err, map) =>
+								map[k] = v for k, v of context
 
 								@data.eval props.eval, map, (err, result) =>
 									result = result ? props.default ? null

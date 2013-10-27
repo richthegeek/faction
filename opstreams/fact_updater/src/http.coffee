@@ -1,25 +1,16 @@
 Q = require 'q'
 request = require 'request'
 
-
-deferredRequest = (method, url, body) ->
+init = request.Request::init
+request.Request::init = (options) ->
 	defer = Q.defer()
+	@on 'complete', defer.resolve
+	@on 'error', defer.reject
 
-	options =
-		method: method.toUpperCase()
-		uri: url,
-		json: body
+	# copy over promise functions, except timeout.
+	for key, val of defer.promise when key isnt 'timeout'
+		@[key] ?= defer.promise[key]
 
-	request[method.toLowerCase()] options, (err, response, body) ->
-		if err or response.statusCode.toString().charAt(0) isnt '2'
-			return defer.reject err or 'Uknown error'
-		defer.resolve body
+	init.call @, options
 
-	return defer.promise
-
-module.exports =
-	get: (url, body) -> return deferredRequest 'get', url, body
-	post: (url, body) -> return deferredRequest 'post', url, body
-	put: (url, body) -> return deferredRequest 'put', url, body
-	patch: (url, body) -> return deferredRequest 'patch', url, body
-	delete: (url, body) -> return deferredRequest 'delete', url, body
+module.exports = request
