@@ -81,6 +81,7 @@ module.exports = function(stream, config, row) {
         sandbox.run(code);
         result['_conditions.' + condition.condition_id] = !!sandbox.condition.result;
       }
+      sandbox.dispose();
       return fact.table.update({
         _id: row.id
       }, {
@@ -94,3 +95,7 @@ module.exports = function(stream, config, row) {
     });
   };
 };
+
+/*
+//@ sourceMappingURL=index.map
+*/

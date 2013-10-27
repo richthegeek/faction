@@ -67,14 +67,14 @@
   */
 
 
-  String.prototype.hashCode = function(str) {
+  String.prototype.hashCode = function() {
     var chr, hash, i, _i, _ref;
     hash = 0;
-    if (str.length === 0) {
+    if (this.length === 0) {
       return hash;
     }
-    for (i = _i = 0, _ref = str.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      chr = str.charCodeAt(i);
+    for (i = _i = 0, _ref = this.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      chr = this.charCodeAt(i);
       hash = ((hash << 5) - hash) + chr;
       hash |= 0;
     }
@@ -534,20 +534,15 @@
       }
       return async.waterfall([
         loadProfile = function(next) {
-          console.log('~~ load profile');
           return _this._search(id, subprofileOptions || {}, next);
         }, createIfNeeded = function(profile, next) {
           var row, _i, _len, _ref;
-          console.log('~~ create if needed');
           profile = [].concat(profile);
           if (profile.length === 0 || profile[0] === void 0) {
-            console.log('~~ create');
             return _this._create(_.extend(id, fieldsToAdd), subprofileOptions || {}, function(err, data) {
-              console.log('~~ create cb');
               return next(err, data);
             });
           } else {
-            console.log('~~ update', profile, profile[0]);
             profile = profile.shift();
             profile._fields = {};
             _ref = [].concat(profile.fields.pair);
@@ -560,13 +555,11 @@
               }
             }
             return _this._update(profile.id, fieldsToAdd, function(err, data) {
-              console.log('~~ update cb');
               return next(err, profile);
             });
           }
         }
       ], function(err, profile) {
-        console.log('~~ do callback');
         if (!subprofileOptions) {
           _this.currentProfile = profile;
           return callback(err, _this);
@@ -584,7 +577,6 @@
       if (options == null) {
         options = {};
       }
-      console.log('** in subprofile');
       opts = {
         'state': {
           'client': this.client,
@@ -594,11 +586,9 @@
         }
       };
       return new Copernica_Subprofile(opts, function(err, obj) {
-        console.log('** init');
-        obj.profile(id, fieldsToAdd, callback, _.extend(options, {
+        return obj.profile(id, fieldsToAdd, callback, _.extend(options, {
           'id': opts.state.currentProfile.id
         }));
-        return console.log('** in post subprofile');
       });
     };
 
@@ -863,20 +853,17 @@
               row = collections[i];
               collectionsMap[row.name] = i;
             }
-            console.log('collections map', collectionsMap);
             return async.map(profile.devices, (function(device, next2) {
               return async.map(device.sessions, (function(session, next3) {
                 var pvid;
                 pvid = 0;
                 return async.map(session.actions, (function(action, next4) {
                   var fields, id, _ref;
-                  console.log("\n\n", action);
                   if (action._value.type === 'page' && (_ref = action._value.url.slice(-3), __indexOf.call(downloadFileTypes, _ref) >= 0)) {
                     action._value.type = 'download';
                   }
                   switch (action._value.type) {
                     case 'page':
-                      console.log('page');
                       id = {
                         'pageview_id': actionId(action._time, action._value.url),
                         'visit_id': session._id
@@ -891,7 +878,6 @@
                       };
                       break;
                     case 'download':
-                      console.log('download');
                       id = {
                         'DownloadID': actionId(action._time, action._value.url)
                       };
@@ -904,7 +890,6 @@
                       };
                       break;
                     case 'form':
-                      console.log('form');
                       id = {
                         'fillID': actionId(action._time, action._value.form_id)
                       };
@@ -917,7 +902,6 @@
                       };
                       break;
                     default:
-                      console.log('else', action._value.type);
                       return next4();
                   }
                   options.id = copernica.currentProfile.id;

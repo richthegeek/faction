@@ -61,6 +61,9 @@ module.exports = (stream, config) ->
 							[key, props] = arr
 							# evaluate the value
 							@withMap [], props.map, false, (err, map) =>
+
+								map.http = require('./http')
+
 								@data.eval props.eval, map, (err, result) =>
 									result = result ? props.default ? null
 									# send it forward

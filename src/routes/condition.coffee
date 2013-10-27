@@ -78,11 +78,11 @@ module.exports = (server) ->
 					require('contextify')(sandbox)
 					sandbox.run code
 
-					console.log sandbox.condition
-
 					res.send {
 						condition: condition,
 						fact: fact,
 						result: sandbox.condition.result
 						result_breakdown: sandbox.condition.resultBreakdown
 					}
+
+					sandbox.dispose()
