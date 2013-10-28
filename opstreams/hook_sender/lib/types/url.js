@@ -3,8 +3,6 @@
   module.exports = {
     exec: function(hook, fact, cb) {
       var options;
-      console.log('URL', hook, fact);
-      return;
       options = {
         method: 'POST',
         uri: hook.url,

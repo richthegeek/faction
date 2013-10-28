@@ -658,7 +658,7 @@ module.exports =
 
 					data_fields =
 						'uid': profile._id
-						'LeadScore': profile.score or 0
+						'LeadScore': profile.score.score or 0
 					# TODO: device info
 					copernica.profile id_fields, data_fields, next1
 
