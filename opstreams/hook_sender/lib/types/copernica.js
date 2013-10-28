@@ -839,7 +839,7 @@
             };
             data_fields = {
               'uid': profile._id,
-              'LeadScore': profile.score.value || 0
+              'LeadScore': profile.score.score || 0
             };
             return copernica.profile(id_fields, data_fields, next1);
           }, getCollections = function(copernica, next1) {
