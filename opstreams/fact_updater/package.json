@@ -4,7 +4,9 @@
 	"version": "0.0.1",
 	"dependencies": {
 		"shared-cache": "*",
-		"async": "*"
+		"async": "*",
+		"request": "*",
+		"q": "*"
 	},
 	"main": "./lib/index"
 }

@@ -83,6 +83,8 @@ module.exports = (stream, config, row) ->
 
 				result['_conditions.' + condition.condition_id] = !! sandbox.condition.result
 
+			sandbox.dispose()
+
 
 			# update the original fact with these condition values
 			fact.table.update {_id: row.id}, {$set: result}, (err) =>

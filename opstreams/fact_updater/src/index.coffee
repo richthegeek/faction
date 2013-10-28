@@ -60,11 +60,24 @@ module.exports = (stream, config) ->
 						evaluate = (arr, next) =>
 							[key, props] = arr
 							# evaluate the value
-							@withMap [], props.map, false, (err, map) =>
+							context =
+								http: require('./http')
+								q: require('q')
+								fact: this.data
+								load: (type, id) ->
+									defer = require('q').defer()
+									new Fact_Model self.accountModel, type, () ->
+										@load {_id: id}, (err, found) ->
+											if err or not found
+												return defer.reject err or 'Not found'
+											defer.resolve @data
+									return defer.promise
+
+							@withMap [], props.map, context, (err, map) =>
+								map[k] = v for k, v of context
+
 								@data.eval props.eval, map, (err, result) =>
 									result = result ? props.default ? null
-
-									console.log props.eval, map, result
 
 									# send it forward
 									next null, {key: key, value: result}

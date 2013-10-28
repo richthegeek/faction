@@ -85,12 +85,37 @@ module.exports = function(stream, config) {
               return _results;
             })();
             evaluate = function(arr, next) {
+              var context;
               key = arr[0], props = arr[1];
-              return _this.withMap([], props.map, false, function(err, map) {
+              context = {
+                http: require('./http'),
+                q: require('q'),
+                fact: _this.data,
+                load: function(type, id) {
+                  var defer;
+                  defer = require('q').defer();
+                  new Fact_Model(self.accountModel, type, function() {
+                    return this.load({
+                      _id: id
+                    }, function(err, found) {
+                      if (err || !found) {
+                        return defer.reject(err || 'Not found');
+                      }
+                      return defer.resolve(this.data);
+                    });
+                  });
+                  return defer.promise;
+                }
+              };
+              return _this.withMap([], props.map, context, function(err, map) {
+                var k, v;
+                for (k in context) {
+                  v = context[k];
+                  map[k] = v;
+                }
                 return _this.data["eval"](props["eval"], map, function(err, result) {
                   var _ref;
                   result = (_ref = result != null ? result : props["default"]) != null ? _ref : null;
-                  console.log(props["eval"], map, result);
                   return next(null, {
                     key: key,
                     value: result

@@ -126,16 +126,24 @@ module.exports = class Fact_deferred_Model extends Model
 				@data = fact
 				callback.call @, err, fact
 
-	withMap: (_with, map, shim, callback) ->
+	withMap: (_with, map, context, shim, callback) ->
 		args = Array::slice.call(arguments, 2)
 		callback = args.pop()
 		shim = args.pop() or true
 
-		_with = [].concat.call [], _with ? {}
-		map = map or {}
-		map._id ?= 'this._id'
+		if typeof shim isnt 'boolean'
+			context = shim
+			shim = true
+		else
+			context = args.pop() or {}
 
-		async.map _with, @data.get.bind(@data), () =>
+		_with = [].concat.call [], _with ? []
+		map = map or {}
+
+		get = (part, next) =>
+			@data.get part, context, next
+
+		async.map _with, get, () =>
 			if not map
 				return res.send @data
 
@@ -152,11 +160,17 @@ module.exports = class Fact_deferred_Model extends Model
 						def = path[1]
 						path = path[0]
 
-					@data.eval path, (err, result) ->
-						return next null, obj[key] = result or def
+					@data.eval path, context, (err, result) ->
+						return next null, obj[key] = context[key] = result or def
 
-				async.map ([key, path] for key, path of map), get, () =>
-					callback null, obj
+				maps = ([key, path] for key, path of map)
+				if maps.length > 0
+					maps.unshift ['_id', 'this._id']
+
+					async.mapSeries maps, get, () =>
+						callback null, obj
+				else
+					callback null, @data
 
 
 	getSettings: (callback) ->
@@ -164,7 +178,7 @@ module.exports = class Fact_deferred_Model extends Model
 			@db.collection('fact_settings').find().toArray next
 
 		@settings_cache.get (err, settings) =>
-			callback err, settings.filter((setting) => setting._id is @type).pop()
+			callback err, settings.filter((setting) => setting._id is @type).pop() or {}
 
 
 	@getTypes = (account, callback) ->
