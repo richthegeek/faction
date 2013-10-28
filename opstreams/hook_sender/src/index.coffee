@@ -95,8 +95,7 @@ module.exports = (stream, config, row) ->
 						console.log JSON.stringify err
 						throw err
 
-					console.log 'DONE', result
-					return
+					console.log 'HOOK SENT', result
 
 					cb err, result
 			catch err
