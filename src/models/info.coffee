@@ -17,7 +17,17 @@ module.exports = class Info_Model extends Model
 
 		delete info._id
 		info._type = type
-		@table.insert info, callback
+
+		job = {
+			title: "#{@account.data._id } - #{new Date}"
+			account: @account.data._id
+			data: info
+		}
+
+		jobs.create('info', job).save callback
+
+		# TODO: stop inserting if it works!
+		@table.insert info, () -> null #callback
 
 	@route = (req, res, next) ->
 		new Info_Model req.account, () ->

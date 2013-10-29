@@ -98,7 +98,7 @@ module.exports = class Action_Model extends Model
 				callback e, r, index - 1
 
 
-	actionTypes: (callback) ->
+	@actionTypes = @::actionTypes = (callback) ->
 		cache = Cache.create 'action-types', true, (key, next) =>
 			fs = require 'fs'
 			path = require 'path'

@@ -1,0 +1,12 @@
+{
+	"name": "info_mapper",
+	"private": true,
+	"version": "0.0.1",
+	"dependencies": {
+		"xtend": "*",
+		"traverse": "*",
+		"shared-cache": "*",
+		"async": "*"
+	},
+	"main": "./lib/index"
+}

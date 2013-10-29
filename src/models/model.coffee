@@ -1,7 +1,7 @@
 module.exports = class Model
 
 	constructor: (db, collection, callback) ->
-		mongodb.open db, collection, (err, @db, @table) =>
+		mongodb.open db, collection, config.mongo.host, config.mongo.port, (err, @db, @table) =>
 			if callback
 				callback.call @, @, db, table
 
