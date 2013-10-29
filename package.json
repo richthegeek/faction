@@ -16,6 +16,9 @@
     "q": "*",
     "request": "*",
 
+    "underscore": "*",
+    "soap": "*",
+
     "redis": "*",
     "kue": "*",
     "lynx": "*",
