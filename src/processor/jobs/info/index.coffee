@@ -144,7 +144,8 @@ module.exports = (job, done) ->
 			fact._updated = new Date
 
 			if not fact._id
-				return done 'No ID'
+				console.log 'Skip, no ID'
+				return next()
 
 			# save this into the target collection, move on
 			info.model.table.save fact, (err) ->
@@ -169,7 +170,7 @@ module.exports = (job, done) ->
 				result = [].concat.apply([], result)
 				result = result.filter (r) -> (!! r) and not Array.isArray r
 
-				for row in result
+				for row in result when result
 					job = jobs.create 'fact_update', {
 						title: "#{row.fact_type} - #{row.fact_id}"
 						account: accountID,
