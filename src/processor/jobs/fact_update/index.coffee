@@ -75,6 +75,9 @@ module.exports = (job, done) ->
 
 		fact = results.fact
 
+		if not fact?.data?
+			return done 'Invalid fact'
+
 		context =
 			http: http
 			q: q
