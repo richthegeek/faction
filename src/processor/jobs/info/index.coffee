@@ -1,6 +1,11 @@
 async = require 'async'
 Cache = require 'shared-cache'
 
+mergeFacts = require './merge_facts'
+markForeignFacts = require './mark_foreign_facts'
+addShim = require './add_shim'
+{evaluate, parseObject} = require './eval'
+
 module.exports = (job, done) ->
 
 	job.progress 0, 3
@@ -9,11 +14,6 @@ module.exports = (job, done) ->
 	accountID = job.data.account
 	time = new Date parseInt job.created_at
 	row = job.data.data
-
-	mergeFacts = require './merge_facts'
-	markForeignFacts = require './mark_foreign_facts'
-	addShim = require './add_shim'
-	{evaluate, parseObject} = require './eval'
 
 
 	fns = {}
@@ -144,7 +144,6 @@ module.exports = (job, done) ->
 			fact._updated = new Date
 
 			if not fact._id
-				console.log 'Skip, no ID'
 				return next()
 
 			# save this into the target collection, move on
