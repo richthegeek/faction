@@ -24,18 +24,20 @@ module.exports = (req, res, next) ->
 
 			req.path = req.url.split('?').shift()
 
-			hash_parts = [
-				req.path,
-				JSON.stringify(req.body or {})
-				key.private
-			]
-			hash = require('crypto').createHash('sha256').update(hash_parts.join('')).digest('hex')
+			if key.secure
+				hash_parts = [
+					req.path,
+					JSON.stringify(req.body or {})
+					key.private
+				]
+				hash = require('crypto').createHash('sha256').update(hash_parts.join('')).digest('hex')
 
-			if key.secure and hash isnt req.query.hash
-				return next new restify.InvalidCredentialsError "Request signature did not match. (path = #{hash_parts[0]}, body = #{hash_parts[1]}"
+				if hash isnt req.query.hash
+					return next new restify.InvalidCredentialsError "Request signature did not match. (path = #{hash_parts[0]}, body = #{hash_parts[1]}"
 
 			req.key = key
 			req.account = @
+			req.auth = 'api'
 			delete req.params.key
 			delete req.params.hash
 
