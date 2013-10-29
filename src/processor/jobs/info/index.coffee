@@ -141,7 +141,10 @@ module.exports = (job, done) ->
 			for key, mode of set.field_modes when mode is 'delete'
 				info.fact.del.call fact, key
 
-			info.fact.set.call fact, '_updated', new Date
+			fact._updated = new Date
+
+			if not fact._id
+				return done 'No ID'
 
 			# save this into the target collection, move on
 			info.model.table.save fact, (err) ->
