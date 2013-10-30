@@ -7,5 +7,5 @@ module.exports =
 		callback()
 
 	exec: (info, next) ->
-		console.log info.step.log
+		console.log '@', info.step.log
 		return next null, info.step.log

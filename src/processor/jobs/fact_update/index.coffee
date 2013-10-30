@@ -102,14 +102,15 @@ module.exports = (job, done) ->
 				fact.data.eval props.eval, map, (err, result) =>
 					result = result ? props.default ? null
 
-					# send it forward
+					fact.data.set.call fact.data.data, key, result
 					next null, {key: key, value: result}
 
 		doConditions = (condition, next) ->
 
 			# context = getContext fact
 			evalCond = (cond, next2) ->
-				fact.data.eval cond, context, next2
+				fact.data.eval cond, context, (err, result) ->
+					next2 err, result
 
 			async.mapSeries condition.conditions, evalCond, (err, result) ->
 				result = not err and result.every Boolean
