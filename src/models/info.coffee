@@ -18,13 +18,13 @@ module.exports = class Info_Model extends Model
 		delete info._id
 		info._type = type
 
-		job = {
+		job = jobs.create('info', {
 			title: "#{@account.data._id } - #{new Date}"
 			account: @account.data._id
 			data: info
-		}
+		})
 
-		jobs.create('info', job).save callback
+		job.save (err) -> callback err, job
 
 		# TODO: stop inserting if it works!
 		@table.insert info, () -> null #callback

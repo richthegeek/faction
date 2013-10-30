@@ -126,6 +126,20 @@ module.exports = class Fact_deferred_Model extends Model
 				@data = fact
 				callback.call @, err, fact
 
+	evaluateCondition: (condition, context, callback) ->
+		args = Array::slice.call arguments
+		callback = args.pop() or -> null
+		context = args.pop() or {}
+
+		fact = @
+
+		evalCond = (cond, next2) ->
+			fact.data.eval cond, context, (err, result) ->
+				next2 err, result
+
+		async.mapSeries condition.data.conditions, evalCond, callback
+
+
 	withMap: (_with, map, context, shim, callback) ->
 		args = Array::slice.call(arguments, 2)
 		callback = args.pop()

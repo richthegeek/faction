@@ -42,47 +42,29 @@ module.exports = (server) ->
 					statusText: "No such condition exists, so it was not removed."
 				}
 
-	# Test a condition against a specific fact.
-	server.get '/conditions/:fact-type/:condition-id/test/:fact-id', Condition_Model.route, (req, res, next) ->
+	evaluate = (next, res, fact, condition) ->
+		fact.addShim () =>
+			fact.evaluateCondition condition, (err, results) =>
+				next err or res.send {
+					condition: condition.export(),
+					fact: fact.export(),
+					result: results.every(Boolean),
+					result_breakdown: results
+				}
+
+
+	server.post '/conditions/:fact-type/:condition-id/test', Condition_Model.route, (req, res, next) ->
 		req.model.load req.params.asQuery('fact-type', 'condition-id'), (err) ->
 			condition = @
-			new Fact_Model req.account, condition.data.fact_type, () ->
+			new Fact_deferred_Model req.account, condition.data.fact_type, () ->
+				@import req.body, () ->
+					evaluate next, res, @, condition
+
+
+	# Test a condition against a specific fact.
+	server.post '/conditions/:fact-type/:condition-id/test/:fact-id', Condition_Model.route, (req, res, next) ->
+		req.model.load req.params.asQuery('fact-type', 'condition-id'), (err) ->
+			condition = @
+			new Fact_deferred_Model req.account, condition.data.fact_type, () ->
 				@load {_id: req.params['fact-id']}, ErrorHandler next, (err) ->
-					fact = @
-
-					bound = fact.bindFunctions()
-
-					catcher =
-						log: () -> logged.push 'log', arguments
-						error: () -> logged.push 'error', arguments
-						info: () -> logged.push 'info', arguments
-						warn: () -> logged.push 'warn', arguments
-
-					code = """
-					full = true;
-					condition.resultBreakdown = condition.conditions.map(function(condition) {
-						try {
-							res = eval(condition);
-							full = full && res;
-							return res;
-						} catch(e) {
-							console.error(e);
-							full = false;
-							return false;
-						}
-					});
-					condition.result = full;
-					"""
-
-					sandbox = {fact: bound, condition: condition.export(), console: console}
-					require('contextify')(sandbox)
-					sandbox.run code
-
-					res.send {
-						condition: condition,
-						fact: fact,
-						result: sandbox.condition.result
-						result_breakdown: sandbox.condition.resultBreakdown
-					}
-
-					sandbox.dispose()
+					evaluate next, res, @, condition

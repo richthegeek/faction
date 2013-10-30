@@ -30,7 +30,7 @@ module.exports = (job, done) ->
 			account.database.collection('fact_settings').find().toArray next
 
 		account.conditions ?= Cache.create 'fact-conditions-' + accountID, true, (key, next) ->
-			account.database.collection('fact_conditions').find().toArray next
+			account.database.collection('conditions').find().toArray next
 
 		account.actions ?= Cache.create 'actions-' + accountID, true, (key, next) ->
 			account.database.collection('actions').find().toArray next
@@ -105,19 +105,13 @@ module.exports = (job, done) ->
 					fact.data.set.call fact.data.data, key, result
 					next null, {key: key, value: result}
 
-		doConditions = (condition, next) ->
-
-			# context = getContext fact
-			evalCond = (cond, next2) ->
-				fact.data.eval cond, context, (err, result) ->
-					next2 err, result
-
-			async.mapSeries condition.conditions, evalCond, (err, result) ->
-				result = not err and result.every Boolean
-				next null, {key: '_conditions.' + condition.condition_id, value: result}
-
 		# not sure why i have to do this? deferredObject returnign twice perhaps
 		called = false
+
+		doConditions = (condition, next) ->
+			fact.evaluateCondition condition, context, (err, result) ->
+				result = not err and result.every Boolean
+				next null, {key: '_conditions.' + condition.condition_id, value: result}
 
 		async.mapSeries evals, evaluate, (err, cols1) ->
 			async.mapSeries conditions, doConditions, (err, cols2) ->
