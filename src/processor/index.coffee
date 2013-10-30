@@ -57,7 +57,7 @@ processJobs = (type, ready) ->
 			if not idle
 				console.log "`", pad(type, 15), 'idle'
 			idle = true
-	), 1000
+	), (config.kue.interval * 1000)
 
 	jobs.process type, multi, (job, complete) ->
 		start = new Date
