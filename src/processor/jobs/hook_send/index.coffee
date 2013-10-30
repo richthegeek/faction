@@ -39,35 +39,33 @@ module.exports = (job, done) ->
 					next null, model
 
 	async.series fns, (err, results) =>
-
 		hook = results.hooks.filter((hook) -> hook.fact_type is row.fact_type and hook.hook_id is row.hook_id).pop()
 
 		if not hook
 			return done 'Unknown hook'
 
+		try
+			results.fact.withMap hook.with, hook.map, false, (err, result) ->
+				# double-JSON to strip getters at this stage
+				fact = JSON.parse JSON.stringify result
 
-		results.fact.withMap hook.with, hook.map, false, (err, result) ->
-			# double-JSON to strip getters at this stage
-			fact = JSON.parse JSON.stringify result
+				# todo: handle failures, re-send, etc...
+				cb = (err, res, body) ->
+					# if res.statusCode.toString().charAt(0) is '2'
+					return callback null, {
+						hook_id: row.hook_id,
+						fact_type: row.fact_type,
+						fact_id: fact._id,
+						status: res.statusCode,
+						body: body,
+						time: new Date
+					}
 
-			# todo: handle failures, re-send, etc...
-			cb = (err, res, body) ->
-				# if res.statusCode.toString().charAt(0) is '2'
-				return callback null, {
-					hook_id: row.hook_id,
-					fact_type: row.fact_type,
-					fact_id: fact._id,
-					status: res.statusCode,
-					body: body,
-					time: new Date
-				}
+				hook.type ?= 'url'
+				# TODO: make this way more clever
+				file = path.resolve(__dirname, './types') + '/' + hook.type
+				hookService = require file
 
-			hook.type ?= 'url'
-			# TODO: make this way more clever
-			file = path.resolve(__dirname, './types') + '/' + hook.type
-			hookService = require file
-
-			try
 
 				hookService.exec hook, fact, (err, result) ->
 					if err
@@ -76,10 +74,12 @@ module.exports = (job, done) ->
 
 					done err, result
 
-			catch err
-				console.log 'Shit code alert'
-				console.log err
-				return
+		catch err
+			console.log 'Shit code alert'
+			console.log err.stack or err.message or err
+			console.log typeof err
+			console.log (err.then? and 'Promise') or (Object::toString.call(err))
+			return
 
 # Up the conccurency here
 module.exports.concurrency = 10

@@ -141,9 +141,11 @@ module.exports = class Fact_deferred_Model extends Model
 		map = map or {}
 
 		get = (part, next) =>
-			@data.get part, context, next
+			@data.eval "this.#{part}", context, (err, result) ->
+				next err, result
 
 		async.map _with, get, () =>
+
 			if not map
 				return res.send @data
 

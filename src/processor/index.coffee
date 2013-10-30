@@ -35,13 +35,40 @@ processJobs = (type, ready) ->
 
 	console.log "Processing #{multi}x '#{type}' tasks"
 
+	times = []
+	idle =false
+	setInterval (() ->
+		pad = (str, size = 5) ->
+			str = str.toString()
+			while str.length < size
+				str = " " + str
+			return str
+		if times.length > 0
+
+			sum = pad times.reduce (a, b) -> a + b
+			max = pad times.reduce (a, b) -> Math.max(a, b)
+			min = pad times.reduce (a, b) -> Math.min(a, b)
+			mean = pad Math.round sum / times.length
+
+			console.log "+", pad(type, 15), pad(times.length), "#{sum}ms", [mean, min, max].join(" / ")
+			idle = false
+			times = []
+		else
+			if not idle
+				console.log "`", pad(type, 15), 'idle'
+			idle = true
+	), 1000
+
 	jobs.process type, multi, (job, complete) ->
 		start = new Date
 		processor job, (err, result) ->
 			end = new Date
+			time = (end - start)
 			stats.increment "kue.#{type}", 1
-			stats.timing "kue.#{type}", (end - start)
-			console.log '+', type, (end - start) + 'ms', job.data.title
+			stats.timing "kue.#{type}", time
+			# console.log "+", type, "#{time}ms", job.data.title
+
+			times.push time
 
 			if err
 				console.error '!', type, job.data.title, err

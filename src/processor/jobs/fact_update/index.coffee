@@ -4,7 +4,6 @@ async = require 'async'
 Cache = require 'shared-cache'
 
 module.exports = (job, done) ->
-
 	# job.progress 0, 3
 
 	account = null
@@ -52,7 +51,7 @@ module.exports = (job, done) ->
 
 				# if the fact was updated, bail early - a later fact update should pick it up
 				if fact._updated.toJSON() isnt row.version
-					job.log("Skipped due to invalid version")
+					job.log "Skipped due to invalid version"
 					return next "Invalid version"
 
 				@addShim () =>
@@ -102,6 +101,7 @@ module.exports = (job, done) ->
 				map[k] = v for k, v of context
 				fact.data.eval props.eval, map, (err, result) =>
 					result = result ? props.default ? null
+
 					# send it forward
 					next null, {key: key, value: result}
 
@@ -117,9 +117,12 @@ module.exports = (job, done) ->
 
 		# not sure why i have to do this? deferredObject returnign twice perhaps
 		called = false
+
 		async.mapSeries evals, evaluate, (err, cols1) ->
 			async.mapSeries conditions, doConditions, (err, cols2) ->
-				if called then return
+				if called
+					console.log 'called twice (fu)'
+					return
 				called = true
 
 				columns = cols1.concat(cols2).filter Boolean

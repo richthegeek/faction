@@ -647,6 +647,7 @@ module.exports =
 		options = hook.options
 		# TODO: generalise
 		data = [].concat data
+
 		async.map data, ( ( profile, next ) ->
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
