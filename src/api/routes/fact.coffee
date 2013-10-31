@@ -8,8 +8,12 @@ module.exports = (server) ->
 				res.send info
 
 	# retrieve all facts of this type, paginated.
-	server.get '/facts/:fact-type', Fact_Model.route, (req, res, next) ->
-		req.model.loadPaginated req.body, req, ErrorHandler next, (err, response) ->
+	server.get '/facts/:fact-type', Fact_deferred_Model.route, (req, res, next) ->
+		req.body ?= {}
+		req.body.query ?= {}
+		req.body.map ?= {}
+
+		req.model.loadPaginated req.body.query, req, ErrorHandler next, (err, response) ->
 			res.send response
 
 	# get fact settings

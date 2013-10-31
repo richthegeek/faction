@@ -55,10 +55,8 @@ module.exports = class Model
 		@table.find conditions, (err, cursor) =>
 			if err then return callback err
 			cursor.count (err, size) =>
+				sort = false
 				if req.params.sort
-					console.log req.params.sort
-					return
-
 					bits = req.params.sort.toString().split(',')
 					sort = {}
 					for param in bits
@@ -66,6 +64,13 @@ module.exports = class Model
 							sort[param.slice(1)] = -1
 						else
 							sort[param] = 1
+				if req.body.sort
+					sort = {}
+					for key, val of req.body.sort
+						sort[key] = (val is 'desc' and -1) or 1
+
+				if sort isnt false
+					console.log 'sorting', sort
 					cursor.sort(sort)
 
 				cursor.skip(skip).limit(req.query.limit).toArray (err, items) =>
