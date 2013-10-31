@@ -112,7 +112,8 @@ module.exports = class Fact_deferred_Model extends Model
 				callback.call @, err, wrapArray rows
 
 	addShim: (callback) ->
-		addShim = require('path').resolve(__dirname, '../processor/jobs/info/add_shim')
+		file = require('path').resolve __dirname, '../processor/jobs/info/add_shim'
+		addShim = require file
 		addShim @data, callback
 
 	updateFields: (callback) ->
