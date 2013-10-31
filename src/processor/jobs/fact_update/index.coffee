@@ -74,6 +74,11 @@ module.exports = (job, done) ->
 
 		fact = results.fact
 
+		if err
+			console.log 'Error'
+			console.log err.stack or err.message or err
+			return
+
 		if not fact?.data?
 			console.log 'Invalid fact'
 			console.log fact
