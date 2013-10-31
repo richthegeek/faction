@@ -112,6 +112,7 @@ module.exports = class Fact_deferred_Model extends Model
 				callback.call @, err, wrapArray rows
 
 	addShim: (callback) ->
+		return callback()
 		path = require('path').resolve(__dirname, '../../opstreams/info_mapper/lib/add_shim')
 		addShim = require(path)()
 		addShim @data, callback

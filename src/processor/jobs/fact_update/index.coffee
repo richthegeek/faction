@@ -54,8 +54,8 @@ module.exports = (job, done) ->
 					job.log "Skipped due to invalid version"
 					return next "Invalid version"
 
-				@addShim () =>
-					next null, model
+				# @addShim () =>
+				next null, model
 
 	async.series fns, (err, results) =>
 		# need to do the following:
