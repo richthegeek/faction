@@ -3,8 +3,6 @@ console.log 'Starting processor'
 accounts = {}
 global.loadAccount = (accountID, next) ->
 
-	console.log 'loadAccount', accountID
-
 	if accounts[accountID]?
 		return next null, accounts[accountID]
 
