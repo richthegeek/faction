@@ -75,6 +75,9 @@ module.exports = (job, done) ->
 		fact = results.fact
 
 		if err
+			# supress this "error"
+			if err is 'Invalid version'
+				return done()
 			return done err
 
 		if not fact?.data?

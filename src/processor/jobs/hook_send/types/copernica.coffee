@@ -296,7 +296,10 @@ class Copernica_Base
 				else
 					# TODO: check for DONE
 
-					cookies = @client.lastResponseObj.headers['set-cookie']
+					if not @client.lastResponseObj?.headers?
+						console.log 'malforomed lastResponseObj', @client.lastResponseObj
+
+					cookies = @client.lastResponseObj?.headers?['set-cookie'] or []
 					outCookies = []
 
 					for cookie in cookies when 'soap_' is cookie.substr 0, 5

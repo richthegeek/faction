@@ -7,13 +7,12 @@ global.loadAccount = (accountID, next) ->
 		return next null, accounts[accountID]
 
 	new Account_Model () ->
-		accounts[accountID] = @
-
 		@load {_id: accountID}, (err, found) ->
 			if err or not found
 				return err or 'No such account: ' + accountID
 
 			mongodb.open @dbname(), null, config.mongo.host, config.mongo.port, (err, db) =>
+				accounts[accountID] = @
 				@database = db
 				next err, @
 
