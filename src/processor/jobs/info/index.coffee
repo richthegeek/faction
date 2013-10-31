@@ -10,6 +10,8 @@ module.exports = (job, done) ->
 
 	job.progress 0, 3
 
+	job.state 'inactive'
+
 	account = null
 	accountID = job.data.account
 	time = new Date parseInt job.created_at
@@ -19,6 +21,8 @@ module.exports = (job, done) ->
 	fns = {}
 	fns.account = (next) ->
 		loadAccount accountID, (err, acc) ->
+			if err or not acc
+				return console.log 'Failed to get account', err acc
 			account = acc
 			next err
 

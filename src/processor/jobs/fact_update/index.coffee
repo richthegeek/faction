@@ -4,7 +4,7 @@ async = require 'async'
 Cache = require 'shared-cache'
 
 module.exports = (job, done) ->
-	# job.progress 0, 3
+	job.state 'inactive'
 
 	account = null
 	accountID = job.data.account

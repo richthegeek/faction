@@ -137,7 +137,9 @@ module.exports = class Fact_deferred_Model extends Model
 			fact.data.eval cond, context, (err, result) ->
 				next2 err, result
 
-		async.mapSeries condition.data.conditions, evalCond, callback
+		condition = condition.data or condition
+
+		async.mapSeries condition.conditions, evalCond, callback
 
 
 	withMap: (_with, map, context, shim, callback) ->
@@ -163,10 +165,10 @@ module.exports = class Fact_deferred_Model extends Model
 			if not map
 				return res.send @data
 
-			next = (cb) -> cb()
-			next = @addShim if shim
+			# next = (cb) -> cb()
+			# next = @addShim if shim
 
-			next () =>
+			@addShim () =>
 				obj = {}
 				get = (arg, next) =>
 					[key, path] = arg
