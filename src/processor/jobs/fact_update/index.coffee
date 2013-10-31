@@ -77,14 +77,10 @@ module.exports = (job, done) ->
 		if err
 			console.log 'Error'
 			console.log err.stack or err.message or err
-			return
+			return done err
 
 		if not fact?.data?
-			console.log 'Invalid fact'
-			console.log fact
-			console.log fact.export()
-
-			# return done 'Invalid fact'
+			return done 'Invalid fact'
 
 		context =
 			http: http
