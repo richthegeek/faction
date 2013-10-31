@@ -56,6 +56,9 @@ module.exports = class Model
 			if err then return callback err
 			cursor.count (err, size) =>
 				if req.params.sort
+					console.log req.params.sort
+					return
+
 					bits = req.params.sort.toString().split(',')
 					sort = {}
 					for param in bits

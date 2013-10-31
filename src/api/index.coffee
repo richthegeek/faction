@@ -84,6 +84,8 @@ server.use restify.bodyParser mapParams: false, requestBodyOnGet: true
 server.use (req, res, next) ->
 	if req.method is 'GET' and req.params.body
 		req.body = JSON.parse req.params.body
+		if typeof req.body is 'string'
+			req.body = JSON.parse req.body
 	next()
 
 server.use (req, res, next) ->
