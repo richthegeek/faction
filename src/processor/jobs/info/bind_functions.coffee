@@ -92,7 +92,8 @@ module.exports = (data) ->
 		value.del = (col) ->
 			return deleteColumn @, col
 
-	bind_iterable data
+	if data
+		bind_iterable data
 
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
