@@ -75,8 +75,6 @@ module.exports = (job, done) ->
 		fact = results.fact
 
 		if err
-			console.log 'Error'
-			console.log err.stack or err.message or err
 			return done err
 
 		if not fact?.data?
