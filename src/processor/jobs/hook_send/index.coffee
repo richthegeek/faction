@@ -82,4 +82,4 @@ module.exports = (job, done) ->
 			return
 
 # Up the conccurency here
-module.exports.concurrency = 10
+module.exports.concurrency = 5

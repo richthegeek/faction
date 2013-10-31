@@ -324,8 +324,11 @@ class Copernica_Base
 		@request 'Account_database',
 			{ 'identifier': identifier },
 			{ 'noDb': true }, ( err, data ) =>
-				@currentDB = data.result.database
-				callback err, @
+				if not data.result?.database?
+					callback 'No database'
+				else
+					@currentDB = data.result.database
+					callback err, @
 		@
 
 	# Get a list of collections
