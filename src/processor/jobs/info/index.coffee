@@ -182,3 +182,7 @@ module.exports = (job, done) ->
 					job.save()
 
 				done err, result
+
+
+module.exports.concurrency = 3
+module.exports.timeout = 1000
