@@ -32,7 +32,11 @@ processJobs = (type, ready) ->
 
 	processor = require jobPath
 	multi = Math.max(processor.concurrency | 0, 1)
-	disabled = (processor.disabled isnt true) and (processor.concurrency isnt 0)
+	disabled = (processor.disabled is true) or (processor.concurrency is 0)
+
+	if disabled
+		console.log "Skipping #{type} tasks"
+		return ready()
 
 	console.log "Processing #{multi}x '#{type}' tasks"
 
