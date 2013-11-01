@@ -33,7 +33,7 @@ processing = 0
 killProcessor = () ->
 	killSwitch = true
 	setInterval (() ->
-		console.log processing.length
+		console.log processing
 		if processing is 0
 			process.exit 0
 	), 100
