@@ -165,3 +165,6 @@ module.exports = (job, done) ->
 
 				async.each list, ((job, next) -> job.save(next)), (err) ->
 					done null, columns
+
+module.exports.concurrency = 1
+module.exports.timeout = 2000

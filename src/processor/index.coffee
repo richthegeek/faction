@@ -27,11 +27,14 @@ exec = require('child_process').exec
 
 jobsPath = path.resolve __dirname, './jobs'
 
+killSwitch = false
+
 processJobs = (type, ready) ->
 	jobPath = jobsPath + '/' + type
 
 	processor = require jobPath
 	multi = Math.max(processor.concurrency | 0, 1)
+	timeout = processor.timeout | 0
 	disabled = (processor.disabled is true) or (processor.concurrency is 0)
 
 	if disabled
@@ -55,6 +58,13 @@ processJobs = (type, ready) ->
 			min = pad times.reduce (a, b) -> Math.min(a, b)
 			mean = pad Math.round sum / times.length
 
+			if (timeout > 0) and (mean > timeout)
+				killSwitch = true
+				console.log 'Killing in 5 seconds due to speed problems'
+				setTimeout (() ->
+					process.exit 0
+				), 5000
+
 			percent = sum / (config.kue.interval * 10 ) # 100s / 1000i
 			percent = Math.round percent
 
@@ -68,6 +78,11 @@ processJobs = (type, ready) ->
 	), (config.kue.interval * 1000)
 
 	jobs.process type, multi, (job, complete) ->
+		if killSwitch
+			job.state 'inactive'
+			job.save()
+			return
+
 		start = new Date
 		processor job, (err, result) ->
 			end = new Date
