@@ -56,7 +56,7 @@ processJobs = (type, ready) ->
 			mean = pad Math.round sum / times.length
 
 			percent = sum / (config.kue.interval * 10 ) # 100s / 1000i
-			percent = 0.1 * Math.round sum * 10
+			percent = 0.1 * Math.round percent * 10
 
 			console.log "+", pad(type, 15), pad(times.length), "#{percent}%", [mean, min, max].join(" / ")
 			idle = false
