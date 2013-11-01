@@ -28,6 +28,22 @@ exec = require('child_process').exec
 jobsPath = path.resolve __dirname, './jobs'
 
 killSwitch = false
+processing = 0
+
+killProcessor = () ->
+	killSwitch = true
+	setInterval (() ->
+		console.log processing.length
+		if processing.length is 0
+			process.exit 0
+	), 100
+	setTimeout (() ->
+		process.exit 0
+	), 5000
+
+process.on 'SIGINT', () ->
+	console.log 'Shutting down in 5 seconds due to SIGINT Ctrl-C'
+	killProcessor()
 
 processJobs = (type, ready) ->
 	jobPath = jobsPath + '/' + type
@@ -61,9 +77,7 @@ processJobs = (type, ready) ->
 			if (timeout > 0) and (mean > timeout)
 				killSwitch = true
 				console.log 'Killing in 5 seconds due to speed problems'
-				setTimeout (() ->
-					process.exit 0
-				), 5000
+				killProcessor()
 
 			percent = sum / (config.kue.interval * 10 ) # 100s / 1000i
 			percent = Math.round percent
@@ -84,6 +98,7 @@ processJobs = (type, ready) ->
 			return
 
 		start = new Date
+		processing++
 		processor job, (err, result) ->
 			end = new Date
 			time = (end - start)
@@ -97,6 +112,7 @@ processJobs = (type, ready) ->
 				console.error '!', type, job.data.title, err
 				job.log err
 
+			processing--
 			complete()
 
 	ready()
