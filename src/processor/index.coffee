@@ -33,7 +33,6 @@ processing = 0
 killProcessor = () ->
 	killSwitch = true
 	setInterval (() ->
-		console.log processing
 		if processing is 0
 			process.exit 0
 	), 100
@@ -42,7 +41,7 @@ killProcessor = () ->
 	), 5000
 
 process.on 'SIGINT', () ->
-	console.log 'Shutting down in 5 seconds due to SIGINT Ctrl-C'
+	console.log 'Shutting down in < 5 seconds due to SIGINT Ctrl-C'
 	killProcessor()
 
 processJobs = (type, ready) ->
