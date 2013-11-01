@@ -34,7 +34,7 @@ killProcessor = () ->
 	killSwitch = true
 	setInterval (() ->
 		console.log processing.length
-		if processing.length is 0
+		if processing is 0
 			process.exit 0
 	), 100
 	setTimeout (() ->
