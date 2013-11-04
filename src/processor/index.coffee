@@ -117,9 +117,10 @@ processJobs = (type, ready) ->
 
 kue = require 'kue'
 jobs.on 'job complete', (id) ->
-	kue.Job.get id, (err, job) ->
-		if not err and job
-			job.remove()
+	try
+		kue.Job.get id, (err, job) ->
+			if not err and job
+				job.remove()
 
 async.each fs.readdirSync(jobsPath), processJobs
 
