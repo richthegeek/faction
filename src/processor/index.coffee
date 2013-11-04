@@ -119,6 +119,7 @@ kue = require 'kue'
 jobs.on 'job complete', (id) ->
 	kue.Job.get id, (err, job) ->
 		if not err and job
+			console.log '-', job.id
 			job.remove()
 
 async.each fs.readdirSync(jobsPath), processJobs
