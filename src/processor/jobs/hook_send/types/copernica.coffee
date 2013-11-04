@@ -301,7 +301,7 @@ class Copernica_Base
 						console.log data.headers
 						console.log response.headers
 						console.log @client.lastResponseObj?.headers
-						console.log @client.lastResponse
+						console.log @client.lastResponse?.headers
 						next 'malformed lastResponseObj'
 
 					cookies = @client.lastResponseObj?.headers?['set-cookie'] or []
