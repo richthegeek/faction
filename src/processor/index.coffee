@@ -124,7 +124,6 @@ processJobs = (type, ready) ->
 kue = require 'kue'
 jobs.process 'delete_job', (job, done) ->
 	id = job.data
-	console.log 'Removing', id
 	kue.Job.get id, (err, job) ->
 		if err
 			console.log '!', 'delete_job', id, err
