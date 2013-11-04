@@ -43,7 +43,7 @@ module.exports = class Fact_deferred_Model extends Model
 					version: null
 				}
 			}
-			job.save callback
+			job.save (err) -> callback err, id
 		else
 			callback()
 
@@ -55,7 +55,7 @@ module.exports = class Fact_deferred_Model extends Model
 			ids = result[0].ids
 			insert = (id, next) =>
 				@markUpdated id, next
-			async.map ids, insert, (err, result) -> callback err, ids
+			async.map ids, insert, (err, result) -> callback err, result
 
 	export: ->
 		if @data.data
