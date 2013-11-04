@@ -297,10 +297,11 @@ class Copernica_Base
 					# TODO: check for DONE
 
 					if not @client.lastResponseObj?.headers?
-						console.log 'malforomed lastResponseObj', data, response
+						console.log 'malformed lastResponseObj', data, response
 						console.log data.headers
 						console.log response.headers
 						console.log @client.lastResponseObj?.headers
+						console.log @client.lastResponse
 						next 'malformed lastResponseObj'
 
 					cookies = @client.lastResponseObj?.headers?['set-cookie'] or []
