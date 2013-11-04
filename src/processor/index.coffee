@@ -113,33 +113,14 @@ processJobs = (type, ready) ->
 			# set a timer to delete this job in 10 minutes...
 			# 10 minutes = 10 * 60 * 1000
 			# 10 seconds (testing) = 10000
-			jobs.create('delete_job', job.id).delay(10000).save()
+			setTimeout (() ->
+				job.remove()
+			), 1000
 
 			processing--
 			complete()
 
 	ready()
-
-# delete old jobs
-kue = require 'kue'
-last = null
-jobs.process 'delete_job', (job, done) ->
-	id = job.data
-	if id is last
-		return done()
-	last = id
-
-	process.nextTick () -> job.remove()
-	kue.Job.get id, (err, job) ->
-		if err
-			if err.message.indexOf('doesnt exist') >= 0
-				return
-			console.log '!', 'delete_job', id, err
-			return
-		job.remove()
-
-	done()
-
 
 async.each fs.readdirSync(jobsPath), processJobs
 
