@@ -50,7 +50,7 @@ module.exports = (job, done) ->
 					return next err or 'Bad ID'
 
 				# if the fact was updated, bail early - a later fact update should pick it up
-				if fact._updated.toJSON() isnt row.version
+				if row.version and fact._updated.toJSON() isnt row.version
 					job.log "Skipped due to invalid version"
 					return next "Invalid version"
 

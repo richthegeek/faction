@@ -77,6 +77,8 @@ module.exports = (server) ->
 	# mark a fact as updated...
 	server.post '/facts/:fact-type/update/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
+			console.log 'update', err, found
+
 			return next res.notFound 'user' if not found
 			@markUpdated () =>
 				next res.send {

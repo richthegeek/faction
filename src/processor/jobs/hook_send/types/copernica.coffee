@@ -660,6 +660,7 @@ module.exports =
 					copProfile = new Copernica_Profile options, next1
 
 				updateProfile = ( copernica, next1 ) ->
+
 					id_fields =
 						'Email': profile.email
 

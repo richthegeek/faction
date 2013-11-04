@@ -31,11 +31,16 @@ module.exports = class Fact_deferred_Model extends Model
 
 	markUpdated: (callback) ->
 		if @data._id
-			@db.collection('fact_updates').insert {
-				type: @type,
-				id: @data._id,
-				time: +new Date
-			}, callback
+			job = jobs.create 'fact_update', {
+				title: "#{@type} - #{@data._id}"
+				account: @account.data._id,
+				data: {
+					fact_id: @data._id,
+					fact_type: @type,
+					version: null
+				}
+			}
+			job.save callback
 		else
 			callback()
 
