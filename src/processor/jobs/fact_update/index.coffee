@@ -167,4 +167,4 @@ module.exports = (job, done) ->
 					done null, columns
 
 module.exports.concurrency = 1
-module.exports.timeout = 2000
+module.exports.timeout = 10000
