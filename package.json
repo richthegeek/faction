@@ -17,7 +17,7 @@
     "request": "*",
 
     "underscore": "*",
-    "soap": "*",
+    "soap": "9point6/node-soap",
 
     "redis": "*",
     "kue": "*",
