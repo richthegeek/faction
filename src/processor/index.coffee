@@ -123,10 +123,11 @@ processJobs = (type, ready) ->
 # delete old jobs
 kue = require 'kue'
 jobs.process 'delete_job', (job, done) ->
-	console.log 'Removing', job.data
-	kue.Job.get job.data, (err, job) ->
+	id = job.data
+	console.log 'Removing', id
+	kue.Job.get id, (err, job) ->
 		if err
-			console.log '!', 'delete_job', job.data, err
+			console.log '!', 'delete_job', id, err
 			return
 		job.remove()
 	process.nextTick () -> job.remove()
