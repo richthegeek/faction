@@ -44,6 +44,10 @@ module.exports = (job, done) ->
 		if not hook
 			return done 'Unknown hook'
 
+		if not results.fact
+			console.log 'No fact?', accountID, row.fact_id, row.fact_type
+			return done 'Unknown fact'
+
 		try
 			results.fact.withMap hook.with, hook.map, false, (err, result) ->
 				# double-JSON to strip getters at this stage
