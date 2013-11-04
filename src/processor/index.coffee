@@ -120,7 +120,7 @@ jobs.on 'job complete', (id) ->
 	try
 		kue.Job.get id, (err, job) ->
 			if not err and job
-				job.remove()
+				job.remove () -> null
 
 async.each fs.readdirSync(jobsPath), processJobs
 
