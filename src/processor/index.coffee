@@ -74,11 +74,10 @@ processJobs = (type, ready) ->
 			mean = pad Math.round sum / times.length
 
 			if (timeout > 0) and (mean > timeout)
-				killSwitch = true
 				console.log 'Killing in 5 seconds due to speed problems'
 				killProcessor()
 
-			percent = sum / (config.kue.interval * 10 ) # 100s / 1000i
+			percent = sum / (config.kue.interval * 10 * multi) # 100s / 1000i
 			percent = Math.round percent
 
 			console.log "+", pad(type, 15), pad(times.length), pad("#{percent}%"), [mean, min, max].join(" / ")
@@ -111,10 +110,28 @@ processJobs = (type, ready) ->
 				console.error '!', type, job.data.title, err
 				job.log err
 
+			# set a timer to delete this job in 10 minutes...
+			# 10 minutes = 10 * 60 * 1000
+			# 10 seconds (testing) = 10000
+			jobs.create('delete_job', job.id).delay(10000).save()
+
 			processing--
 			complete()
 
 	ready()
+
+# delete old jobs
+kue = require 'kue'
+jobs.process 'delete_job', (job, done) ->
+	console.log 'Removing', job.data
+	kue.Job.get job.data, (err, job) ->
+		if err
+			console.log '!', 'delete_job', job.data, err
+			return
+		job.remove()
+	process.nextTick () -> job.remove()
+	done()
+
 
 async.each fs.readdirSync(jobsPath), processJobs
 
