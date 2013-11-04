@@ -132,6 +132,8 @@ jobs.process 'delete_job', (job, done) ->
 	process.nextTick () -> job.remove()
 	kue.Job.get id, (err, job) ->
 		if err
+			if err.message.indexOf('doesnt exist') >= 0
+				return
 			console.log '!', 'delete_job', id, err
 			return
 		job.remove()
