@@ -110,17 +110,16 @@ processJobs = (type, ready) ->
 				console.error '!', type, job.data.title, err
 				job.log err
 
-			# set a timer to delete this job in 10 minutes...
-			# 10 minutes = 10 * 60 * 1000
-			# 10 seconds (testing) = 10000
-			setTimeout (() ->
-				job.remove()
-			), 1000
-
 			processing--
 			complete()
 
 	ready()
+
+kue = require 'kue'
+jobs.on 'job complete', (id) ->
+	kue.Job.get id, (err, job) ->
+		if not err and job
+			job.remove()
 
 async.each fs.readdirSync(jobsPath), processJobs
 
