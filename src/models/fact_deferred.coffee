@@ -34,7 +34,7 @@ module.exports = class Fact_deferred_Model extends Model
 			title: "#{type} - #{id}"
 			account: account,
 			data: {
-				fact_id: data,
+				fact_id: id,
 				fact_type: type,
 				version: null
 			}
