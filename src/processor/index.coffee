@@ -73,7 +73,7 @@ processJobs = (type, ready) ->
 			min = pad times.reduce (a, b) -> Math.min(a, b)
 			mean = pad Math.round sum / times.length
 
-			if (timeout > 0) and (mean > timeout)
+			if false and (timeout > 0) and (mean > timeout)
 				console.log 'Killing in 5 seconds due to speed problems'
 				killProcessor()
 
