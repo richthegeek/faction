@@ -29,21 +29,20 @@ module.exports = class Fact_deferred_Model extends Model
 	removeFull: (callback) ->
 		@table.drop callback
 
-	markUpdated: (id, callback) ->
-		args = Array::slice.call(arguments)
-		callback = args.pop()
-		id = args.pop() ? @data._id
-		if id
-			job = jobs.create 'fact_update', {
-				title: "#{@type} - #{@data._id}"
-				account: @account.data._id,
-				data: {
-					fact_id: @data._id,
-					fact_type: @type,
-					version: null
-				}
+	@markUpdated = (id, type, account, callback) ->
+		jobs.create('fact_update', {
+			title: "#{type} - #{id}"
+			account: account,
+			data: {
+				fact_id: data,
+				fact_type: type,
+				version: null
 			}
-			job.save (err) -> callback err, id
+		}).save (err) -> callback err, id
+
+	markUpdated: (callback) ->
+		if @data._id
+			Fact_deferred_Model.markUpdated @data._id, @type, @account.data._id, callback
 		else
 			callback()
 
@@ -51,11 +50,12 @@ module.exports = class Fact_deferred_Model extends Model
 		type = @type
 		collection = @db.collection('fact_updates')
 		# get all ids
-		@table.aggregate {$group: {_id: null, ids: $push: '$_id'}}, (err, result) =>
+		account = @account.data._id
+		@table.aggregate {$group: {_id: null, ids: $push: '$_id'}}, (err, result) ->
 			ids = result[0].ids
 			insert = (id, next) =>
-				@markUpdated id, next
-			async.map ids, insert, (err, result) -> callback err, result
+				Fact_deferred_Model.markUpdated id, type, account, next
+			async.map ids, insert, callback
 
 	export: ->
 		if @data.data
