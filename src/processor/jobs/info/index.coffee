@@ -111,25 +111,36 @@ module.exports = (job, done) ->
 			if not query._id?
 				return next()
 
+			mapping.update_only = !! (mapping.update_only ? false)
+			mapping.conditions ?= []
+
 			new Fact_deferred_Model account, mapping.fact_type, () ->
 				model = @
 				@load query, false, (err, fact = {}) =>
 					if err
 						return next err
 
+					if (mapping.update_only is true) and not fact
+						return next()
+
 					@addShim (err, fact) ->
 						delete row._type
 						delete row._id if Object::toString.call(row._id) is '[object Object]'
 
-						parseObject mapping.fields, {info: row, fact: fact}, (obj) ->
-							obj._id = query._id
+						context = {info: row, fact: fact}
+						fact.evaluateConditions mapping, context, (err, conds) ->
+							console.log 'Conds', mapping.conditions, conds
+							return
 
-							next null, {
-								model: model
-								fact: fact or {},
-								mapping: mapping,
-								info: obj
-							}
+							parseObject mapping.fields, context, (obj) ->
+								obj._id = query._id
+
+								next null, {
+									model: model
+									fact: fact or {},
+									mapping: mapping,
+									info: obj
+								}
 
 		combineMappings = (info, next) ->
 			set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
@@ -163,7 +174,7 @@ module.exports = (job, done) ->
 			job.progress 2, 3
 
 			# flatten results into single array
-			result = [].concat.apply([], result).filter (r) -> !! r
+			result = [].concat.apply([], result).filter Boolean
 
 			async.map result, combineMappings, (err, result) ->
 				job.progress 3, 3
@@ -171,7 +182,7 @@ module.exports = (job, done) ->
 				# double concat...
 				result = [].concat.apply([], result)
 				result = [].concat.apply([], result)
-				result = result.filter (r) -> (!! r) and not Array.isArray r
+				result = result.filter(Boolean).filter (r) -> not Array.isArray r
 
 				for row in result when result
 					job = jobs.create 'fact_update', {
