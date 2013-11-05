@@ -45,7 +45,7 @@ module.exports = (job, done) ->
 			return done 'Unknown hook'
 
 		if not results.fact
-			console.log 'No fact?', accountID, row.fact_id, row.fact_type
+			console.log 'No fact?', accountID, typeof row.fact_id, row.fact_id, row.fact_type
 			return done 'Unknown fact'
 
 		try
