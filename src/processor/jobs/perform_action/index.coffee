@@ -3,7 +3,6 @@ Cache = require 'shared-cache'
 
 module.exports = (job, done) ->
 
-	job.state 'inactive'
 	job.save()
 
 	account = null
