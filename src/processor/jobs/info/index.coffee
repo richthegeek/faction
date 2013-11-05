@@ -156,9 +156,10 @@ module.exports = (job, done) ->
 			for key of set.foreign_keys
 				info.fact.del key
 
+
 			# info.model is a Fact_Model instance. Reimport to add re-add the shim...
 			set.time = time
-			fact = mergeFacts set, info.fact, info.info
+			fact = mergeFacts set, info.fact.data, info.info
 
 			for key, mode of set.field_modes when mode is 'delete'
 				info.fact.del.call fact, key
