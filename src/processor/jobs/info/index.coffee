@@ -127,7 +127,11 @@ module.exports = (job, done) ->
 						delete row._id if Object::toString.call(row._id) is '[object Object]'
 
 						context = {info: row, fact: fact}
-						@evaluateCondition mapping, context, (err, conds) ->
+
+						evalCond = (cond, next) ->
+							Fact_deferred_Model.evaluate cond, context, next
+
+						async.map mapping.conditions, evalCond, (err, conds) ->
 							# if an error occured, treat it as a conditions failure
 							conds.push not err
 							pass = conds.every Boolean
