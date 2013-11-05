@@ -232,13 +232,15 @@ module.exports = class Fact_deferred_Model extends Model
 
 				callback err, result
 
-
+moment = require 'moment'
 Fact_deferred_Model.evaluate = (str, context, callback) ->
 	context.isAsync = false
 	context.async = (val = true) -> context.isAsync = val
 	context.complete = (err, str) ->
 		context.complete = () -> null
 		process.nextTick () -> callback? err, str
+
+	context.moment = moment
 
 	fn = () ->
 		try

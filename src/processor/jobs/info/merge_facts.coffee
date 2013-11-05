@@ -1,4 +1,5 @@
 xtend = require 'xtend'
+traverse = require 'traverse'
 {getColumn, setColumn, deleteColumn} = require './column_ops'
 
 module.exports = (settings, old_fact, mid_fact) ->
@@ -36,5 +37,13 @@ module.exports = (settings, old_fact, mid_fact) ->
 			a = Number(mid_fact[field]) or Math.max()
 			b = Number(old_fact[field]) or Math.max()
 			setColumn new_fact, field, Math.max a, b
+
+	n_f = traverse(new_fact)
+	o_f = traverse(old_fact)
+	n_f.paths().filter((path) -> path[path.length - 1] is '$inc').forEach (path) ->
+		sub_path = path.slice(0, -1)
+		inc_by = n_f.get(path)
+		old_val = o_f.get(sub_path) | 0
+		n_f.set(sub_path, old_val + inc_by)
 
 	return new_fact

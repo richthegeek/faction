@@ -1,5 +1,6 @@
 async = require 'async'
 Cache = require 'shared-cache'
+moment = require 'moment'
 
 mergeFacts = require './merge_facts'
 markForeignFacts = require './mark_foreign_facts'
@@ -127,6 +128,7 @@ module.exports = (job, done) ->
 						delete row._id if Object::toString.call(row._id) is '[object Object]'
 
 						context = {info: row, fact: fact}
+						context.moment = moment
 
 						evalCond = (cond, next) ->
 							Fact_deferred_Model.evaluate cond, context, next
