@@ -137,7 +137,7 @@ module.exports = class Fact_deferred_Model extends Model
 
 		evalCond = (cond, next2) ->
 			fact.data.eval cond, context, (err, result) ->
-				next2 err, result
+				next2 err, Boolean result
 
 		condition = condition.data or condition
 

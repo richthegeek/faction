@@ -8,9 +8,8 @@ addShim = require './add_shim'
 
 module.exports = (job, done) ->
 
-	job.progress 0, 3
-
 	job.state 'inactive'
+	job.progress 0, 3
 
 	account = null
 	accountID = job.data.account
@@ -116,11 +115,12 @@ module.exports = (job, done) ->
 
 			new Fact_deferred_Model account, mapping.fact_type, () ->
 				model = @
-				@load query, false, (err, fact = {}) =>
+				@load query, true, (err, fact = {}) =>
 					if err
 						return next err
 
 					if (mapping.update_only is true) and not fact
+						console.log 'Skip due to update_only', mapping.fact_type, query
 						return next()
 
 					@addShim (err, fact) =>
@@ -128,19 +128,23 @@ module.exports = (job, done) ->
 						delete row._id if Object::toString.call(row._id) is '[object Object]'
 
 						context = {info: row, fact: fact}
-						# @evaluateConditions mapping, context, (err, conds) ->
-							# console.log 'Conds', mapping.conditions, conds
-							# return
+						@evaluateCondition mapping, context, (err, conds) ->
+							# if an error occured, treat it as a conditions failure
+							conds.push not err
+							pass = conds.every Boolean
+							if not pass
+								console.log 'Skip due to condition failure', mapping.conditions
+								return next()
 
-						parseObject mapping.fields, context, (obj) ->
-							obj._id = query._id
+							parseObject mapping.fields, context, (obj) ->
+								obj._id = query._id
 
-							next null, {
-								model: model
-								fact: fact or {},
-								mapping: mapping,
-								info: obj
-							}
+								next null, {
+									model: model
+									fact: fact or {},
+									mapping: mapping,
+									info: obj
+								}
 
 		combineMappings = (info, next) ->
 			set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
@@ -170,6 +174,8 @@ module.exports = (job, done) ->
 				}
 
 		async.map mappings, parseMappings, (err, result) ->
+			if err
+				return done err
 
 			job.progress 2, 3
 
@@ -195,5 +201,5 @@ module.exports = (job, done) ->
 				done err, result
 
 
-module.exports.concurrency = 3
+module.exports.concurrency = 1
 module.exports.timeout = 1000
