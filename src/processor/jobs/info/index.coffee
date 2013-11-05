@@ -8,7 +8,6 @@ addShim = require './add_shim'
 
 module.exports = (job, done) ->
 
-	job.state 'inactive'
 	job.progress 0, 3
 
 	account = null
