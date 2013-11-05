@@ -123,24 +123,24 @@ module.exports = (job, done) ->
 					if (mapping.update_only is true) and not fact
 						return next()
 
-					@addShim (err, fact) ->
+					@addShim (err, fact) =>
 						delete row._type
 						delete row._id if Object::toString.call(row._id) is '[object Object]'
 
 						context = {info: row, fact: fact}
-						fact.evaluateConditions mapping, context, (err, conds) ->
-							console.log 'Conds', mapping.conditions, conds
-							return
+						# @evaluateConditions mapping, context, (err, conds) ->
+							# console.log 'Conds', mapping.conditions, conds
+							# return
 
-							parseObject mapping.fields, context, (obj) ->
-								obj._id = query._id
+						parseObject mapping.fields, context, (obj) ->
+							obj._id = query._id
 
-								next null, {
-									model: model
-									fact: fact or {},
-									mapping: mapping,
-									info: obj
-								}
+							next null, {
+								model: model
+								fact: fact or {},
+								mapping: mapping,
+								info: obj
+							}
 
 		combineMappings = (info, next) ->
 			set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
