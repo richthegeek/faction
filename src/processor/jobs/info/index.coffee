@@ -161,6 +161,9 @@ module.exports = (job, done) ->
 			set.time = time
 			fact = mergeFacts set, info.fact.data, info.info
 
+			if fact.data?.data?
+				delete fact.data
+
 			for key, mode of set.field_modes when mode is 'delete'
 				info.fact.del.call fact, key
 
