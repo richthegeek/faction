@@ -256,7 +256,8 @@ class Copernica_Base
 	constructor: ( options = {}, callback ) ->
 		defaults =
 			'state': {}
-			'url': 'http://soapweb6.copernica.nl'
+			# 'url': 'http://soapweb6.copernica.nl'
+			'url': 'http://soap.copernica.com'
 			'credentials':
 				'username': null
 				'account': null
