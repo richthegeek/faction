@@ -150,10 +150,12 @@ collections =
 			'hidden': false
 			'index': true
 		'pageview_id':
-			'type': 'integer'
-			'value': 0
+			'type': 'text'
+			'value': ''
 			'display': true
 			'ordered': false
+			'length': 50
+			'textlines': 1
 			'hidden': false
 			'index': true
 	'Links':
@@ -760,7 +762,7 @@ module.exports =
 					), ( err, results ) ->
 						meaningfulResult =
 							'profile_id': profile._id
-							'copernica_id': copernica.profile.id
+							'copernica_id': copernica.currentProfile.id
 							'time': +new Date
 
 						next1 err, meaningfulResult, copernica
