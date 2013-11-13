@@ -504,11 +504,14 @@ class Copernica_Profile extends Copernica_Base
 				'value': val
 
 		@request @soapMethods.search, params, ( err, data ) =>
-			if data?.result?.items?[@returnProperties.search]?
-				data = [].concat data.result.items[@returnProperties.search]
-				for row in data
-					data.fields?.pair = [].concat data.fields.pair
-				callback err, data
+			if data?.result?.items?
+				if data?.result?.items?[@returnProperties.search]?
+					data = [].concat data.result.items[@returnProperties.search]
+					for row in data
+						data.fields?.pair = [].concat data.fields.pair
+					callback err, data
+				else
+					callback err, {}
 			else
 				console.log 'Invalid search result', data
 				callback 'Invalid search result'

@@ -24,9 +24,13 @@
     "lynx": "*",
     "nconf": "*"
   },
+  "devDependencies": {
+    "mocha": "~1.13.0"
+  },
   "scripts": {
     "start": "node ./lib/app",
-    "start-dev": "node-dev ./lib/app"
+    "start-dev": "node-dev ./lib/app",
+    "test": "make test"
   },
   "main": "./lib/app"
 }
