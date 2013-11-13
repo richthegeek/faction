@@ -531,7 +531,7 @@ class Copernica_Profile extends Copernica_Base
 			options = {}
 
 		if err = @_create_verify fields
-			callback err
+			return callback err
 
 		# https://www.copernica.com/en/support/apireference/Database_createProfile
 		params =
