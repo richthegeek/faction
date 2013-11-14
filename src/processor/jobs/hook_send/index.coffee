@@ -39,6 +39,10 @@ module.exports = (job, done) ->
 					next null, model
 
 	async.series fns, (err, results) =>
+		if err
+			console.log 'Hook_send index error', err
+			return done err
+
 		hook = results.hooks.filter((hook) -> hook.fact_type is row.fact_type and hook.hook_id is row.hook_id).pop()
 
 		if not hook
