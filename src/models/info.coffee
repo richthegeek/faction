@@ -26,9 +26,6 @@ module.exports = class Info_Model extends Model
 
 		job.save (err) -> callback err, job
 
-		# TODO: stop inserting if it works!
-		@table.insert info, () -> null #callback
-
 	@route = (req, res, next) ->
 		new Info_Model req.account, () ->
 			req.model = @

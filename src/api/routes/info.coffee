@@ -9,6 +9,8 @@ module.exports = (server) ->
 			new Infomapping_Model req.account, () ->
 				@table.find().toArray next
 
+		res.logMessage = req.params['info-type']
+
 		req.model.create req.params['info-type'], req.body, (err) ->
 			if err then return next err
 
