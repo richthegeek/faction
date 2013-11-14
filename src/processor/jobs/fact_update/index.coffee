@@ -158,7 +158,9 @@ module.exports = (job, done) ->
 
 				async.each list, ((job, next) -> job.save(next)), (err) ->
 
-					account = null
+					for k of store
+						store[k] = null
+						delete store[k]
 
 					done null, columns
 
