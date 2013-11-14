@@ -150,10 +150,12 @@ collections =
 			'hidden': false
 			'index': true
 		'pageview_id':
-			'type': 'integer'
-			'value': 0
+			'type': 'text'
+			'value': ''
 			'display': true
 			'ordered': false
+			'length': 50
+			'textlines': 1
 			'hidden': false
 			'index': true
 	'Links':
@@ -431,7 +433,7 @@ class Copernica_Profile extends Copernica_Base
 			createIfNeeded = ( profile, next ) =>
 				# console.log '~~ create if needed'
 				profile = [].concat profile
-				if profile.length is 0 or profile[0] is undefined
+				if profile.length is 0 or profile[0] is undefined or Object.keys( profile[0] ).length is 0
 					# console.log '~~ create'
 					@_create _.extend( id, fieldsToAdd ), subprofileOptions or {}, ( err, data ) ->
 						# console.log '~~ create cb'
@@ -504,11 +506,14 @@ class Copernica_Profile extends Copernica_Base
 				'value': val
 
 		@request @soapMethods.search, params, ( err, data ) =>
-			if data?.result?.items?[@returnProperties.search]?
-				data = [].concat data.result.items[@returnProperties.search]
-				for row in data
-					data.fields?.pair = [].concat data.fields.pair
-				callback err, data
+			if data?.result?.items?
+				if data?.result?.items?[@returnProperties.search]?
+					data = [].concat data.result.items[@returnProperties.search]
+					for row in data
+						data.fields?.pair = [].concat data.fields.pair
+					callback err, data
+				else
+					callback err, {}
 			else
 				console.log 'Invalid search result', data
 				callback 'Invalid search result'
@@ -526,7 +531,7 @@ class Copernica_Profile extends Copernica_Base
 			options = {}
 
 		if err = @_create_verify fields
-			callback err
+			return callback err
 
 		# https://www.copernica.com/en/support/apireference/Database_createProfile
 		params =
@@ -757,7 +762,7 @@ module.exports =
 					), ( err, results ) ->
 						meaningfulResult =
 							'profile_id': profile._id
-							'copernica_id': copernica.profile.id
+							'copernica_id': copernica.currentProfile.id
 							'time': +new Date
 
 						next1 err, meaningfulResult, copernica
