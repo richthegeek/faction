@@ -83,6 +83,7 @@ processJobs = (type, ready) ->
 
 			console.log "+", pad(type, 15), pad(times.length), pad("#{percent}%"), [mean, min, max].join(" / ")
 			idle = false
+			times = []
 		else if this_processing > 0
 			console.log "#", pad(type, 15), "working on #{this_processing} long jobs"
 		else
