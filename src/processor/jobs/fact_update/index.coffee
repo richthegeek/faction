@@ -5,7 +5,9 @@ Cache = require 'shared-cache'
 
 module.exports = (job, done) ->
 
-	account = null
+	# store is an object with which we can delete all entries at the end for GC purposes
+	store = {}
+
 	accountID = job.data.account
 	time = new Date parseInt job.created_at
 	row = job.data.data
@@ -18,31 +20,31 @@ module.exports = (job, done) ->
 	fns = {}
 	fns.account = (next) ->
 		loadAccount accountID, (err, acc) ->
-			account = acc
+			store.account = acc
 			next err
 
 	fns.setup = (next) ->
-		account.hooks ?= Cache.create 'hooks-' + accountID, true, (key, next) ->
-			account.database.collection('hooks').find().toArray next
+		store.account.hooks ?= Cache.create 'hooks-' + accountID, true, (key, next) ->
+			store.account.database.collection('hooks').find().toArray next
 
-		account.settings ?= Cache.create 'fact-settings-' + accountID, true, (key, next) ->
-			account.database.collection('fact_settings').find().toArray next
+		store.account.settings ?= Cache.create 'fact-settings-' + accountID, true, (key, next) ->
+			store.account.database.collection('fact_settings').find().toArray next
 
-		account.conditions ?= Cache.create 'fact-conditions-' + accountID, true, (key, next) ->
-			account.database.collection('conditions').find().toArray next
+		store.account.conditions ?= Cache.create 'fact-conditions-' + accountID, true, (key, next) ->
+			store.account.database.collection('conditions').find().toArray next
 
-		account.actions ?= Cache.create 'actions-' + accountID, true, (key, next) ->
-			account.database.collection('actions').find().toArray next
+		store.account.actions ?= Cache.create 'actions-' + accountID, true, (key, next) ->
+			store.account.database.collection('actions').find().toArray next
 
 		next()
 
-	fns.hooks = (next) -> account.hooks.get (e, r) -> next e, r
-	fns.settings = (next) -> account.settings.get (e, r) -> next e, r
-	fns.conditions = (next) -> account.conditions.get (e, r) -> next e, r
-	fns.actions = (next) -> account.actions.get (e, r) -> next e, r
+	fns.hooks = (next) -> store.account.hooks.get (e, r) -> next e, r
+	fns.settings = (next) -> store.account.settings.get (e, r) -> next e, r
+	fns.conditions = (next) -> store.account.conditions.get (e, r) -> next e, r
+	fns.actions = (next) -> store.account.actions.get (e, r) -> next e, r
 
 	fns.fact = (next) ->
-		new Fact_deferred_Model account, row.fact_type, () ->
+		new Fact_deferred_Model store.account, row.fact_type, () ->
 			model = @
 			@load {_id: row.fact_id}, true, (err, fact = {}) ->
 				if err or not fact._id
@@ -88,7 +90,7 @@ module.exports = (job, done) ->
 			fact: fact.data,
 			load: (type, id) ->
 				defer = require('q').defer()
-				new Fact_deferred_Model account, type, () ->
+				new Fact_deferred_Model store.account, type, () ->
 					@load {_id: id}, (err, found) ->
 						if err or not found
 							return defer.reject err or 'Not found'
@@ -110,9 +112,6 @@ module.exports = (job, done) ->
 					fact.data.set.call fact.data.data, key, result
 					next null, {key: key, value: result}
 
-		# not sure why i have to do this? deferredObject returnign twice perhaps
-		called = false
-
 		doConditions = (condition, next) ->
 			fact.evaluateCondition condition, context, (err, result) ->
 				result = not err and result.every Boolean
@@ -120,11 +119,6 @@ module.exports = (job, done) ->
 
 		async.mapSeries evals, evaluate, (err, cols1) ->
 			async.mapSeries conditions, doConditions, (err, cols2) ->
-				if called
-					console.log 'called twice (fu)'
-					return
-				called = true
-
 				columns = cols1.concat(cols2).filter Boolean
 
 				# if we evaluated anytihng, save the fact.
@@ -163,6 +157,9 @@ module.exports = (job, done) ->
 					}
 
 				async.each list, ((job, next) -> job.save(next)), (err) ->
+
+					account = null
+
 					done null, columns
 
 module.exports.concurrency = 1
