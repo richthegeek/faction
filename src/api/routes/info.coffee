@@ -11,6 +11,10 @@ module.exports = (server) ->
 
 		res.logMessage = req.params['info-type']
 
+		# trakapo specific here
+		if req.body?.action?.type?
+			res.logMessage += '/' + req.body.action.type
+
 		req.model.create req.params['info-type'], req.body, (err) ->
 			if err then return next err
 
