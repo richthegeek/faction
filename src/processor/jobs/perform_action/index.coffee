@@ -93,4 +93,4 @@ module.exports = (job, done) ->
 
 			done err
 
-
+module.exports.disabled = true
