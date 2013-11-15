@@ -138,7 +138,7 @@ module.exports = (job, done) ->
 							conds.push not err
 							pass = conds.every Boolean
 							if not pass
-								if conds.some Boolean
+								if conds.filter(Boolean).length > 1
 									console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, conds[i]]).join("\n\t")
 								return next()
 
