@@ -17,6 +17,11 @@ module.exports = (job, done) ->
 	row = job.data.data
 
 
+	if row._type is 'track' and row.action?.type is 'form'
+		console.log "\n\nFORM"
+		console.log row
+		console.log "\n"
+
 	fns = {}
 	fns.account = (next) ->
 		loadAccount accountID, (err, acc) ->
