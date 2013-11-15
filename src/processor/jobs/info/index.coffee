@@ -145,6 +145,12 @@ module.exports = (job, done) ->
 							parseObject mapping.fields, context, (obj) ->
 								obj._id = query._id
 
+								if mapping.mapping_id = "basket_billing"
+									console.log "\n\nBILLING"
+									console.log mapping
+									console.log obj
+									console.log conds
+
 								next null, {
 									model: model
 									fact: fact or {},
