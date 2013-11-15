@@ -16,7 +16,7 @@ module.exports = (job, done) ->
 	time = new Date parseInt job.created_at
 	row = job.data.data
 
-
+	console.log row._type, row.action?.type
 	if row._type is 'track' and row.action?.type is 'form'
 		console.log "\n\nFORM"
 		console.log row
