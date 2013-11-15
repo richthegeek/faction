@@ -16,12 +16,6 @@ module.exports = (job, done) ->
 	time = new Date parseInt job.created_at
 	row = job.data.data
 
-	console.log row._type, row.action?.type
-	if row._type is 'track' and row.action?.type is 'form'
-		console.log "\n\nFORM"
-		console.log row
-		console.log "\n"
-
 	fns = {}
 	fns.account = (next) ->
 		loadAccount accountID, (err, acc) ->
@@ -149,12 +143,6 @@ module.exports = (job, done) ->
 
 							parseObject mapping.fields, context, (obj) ->
 								obj._id = query._id
-
-								if mapping.mapping_id is "basket_billing"
-									console.log "\n\nBILLING"
-									console.log mapping
-									console.log obj
-									console.log conds
 
 								next null, {
 									model: model
