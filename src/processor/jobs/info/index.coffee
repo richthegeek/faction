@@ -145,7 +145,7 @@ module.exports = (job, done) ->
 							parseObject mapping.fields, context, (obj) ->
 								obj._id = query._id
 
-								if mapping.mapping_id = "basket_billing"
+								if mapping.mapping_id is "basket_billing"
 									console.log "\n\nBILLING"
 									console.log mapping
 									console.log obj
