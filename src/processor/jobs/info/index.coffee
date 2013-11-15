@@ -138,7 +138,7 @@ module.exports = (job, done) ->
 							conds.push not err
 							pass = conds.every Boolean
 							if not pass
-								console.log 'Skip due to condition failure', mapping.conditions
+								console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.join("\n\t")
 								return next()
 
 							parseObject mapping.fields, context, (obj) ->
