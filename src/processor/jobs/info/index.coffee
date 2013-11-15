@@ -139,7 +139,7 @@ module.exports = (job, done) ->
 							pass = conds.every Boolean
 							if not pass
 								if conds.filter(Boolean).length > 1
-									console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, conds[i]]).join("\n\t")
+									console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
 								return next()
 
 							parseObject mapping.fields, context, (obj) ->
