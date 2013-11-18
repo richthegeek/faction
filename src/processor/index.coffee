@@ -101,6 +101,11 @@ processJobs = (type, ready) ->
 		start = new Date
 		processing++
 		this_processing++
+
+		# try re-require to GC
+		processor = null
+		processor = require jobPath
+
 		processor job, (err, result) ->
 
 			processing--
