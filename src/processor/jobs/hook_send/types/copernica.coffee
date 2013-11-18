@@ -665,16 +665,26 @@ module.exports =
 		], callback
 
 	'exec': ( hook, data, callback ) ->
+		counts = []
+		log = ( ) -> console.log.apply console, ["\tCopernica"].concat Array.prototype.slice.apply arguments
+		log "starting exec"
+
 		options = hook.options
 		# TODO: generalise
 		data = [].concat data
 
+		counts[0] = 0
 		async.map data, ( ( profile, next ) ->
+			log "map on data - current profile size", JSON.stringify( profile ).length, " - iteration", ++counts[0], " of ", data.length
+
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
+					log "loading copernica"
+
 					copProfile = new Copernica_Profile options, next1
 
 				updateProfile = ( copernica, next1 ) ->
+					log "updating profile"
 
 					id_fields =
 						'Email': profile.email
@@ -686,21 +696,35 @@ module.exports =
 					copernica.profile id_fields, data_fields, next1
 
 				getCollections = ( copernica, next1 ) ->
+					log "getting collections"
+
 					copernica.getCollections ( err, collections ) ->
 						next1 err, copernica, collections
 
 				addSessions = ( copernica, collections, next1 ) ->
+					log "processing sessions"
+
 					collectionsMap = {}
 					for i, row of collections
 						collectionsMap[row.name] = i
 					# console.log 'collections map', collectionsMap
 
 					# TODO: should I use mapSeries?
+					counts[1] = 0
 					async.map profile.devices, ( ( device, next2 ) ->
+						log "map on profile.device - current device size", JSON.stringify( device ).length, " - iteration", ++counts[1], " of ", profile.devices.length
+
+						counts[2] = 0
 						async.map device.sessions, ( ( session, next3 ) ->
+							log "map on device.sessions - current session size", JSON.stringify( session ).length, " - iteration", ++counts[2], " of ", device.sessions.length
+
 							# TODO: this is pretty hacky. need an ID on actions
 							pvid = 0
+
+							counts[3] = 0
 							async.map session.actions, ( ( action, next4 ) ->
+								log "map on session.actions - current action size", JSON.stringify( action ).length, " - iteration", ++counts[3], " of ", session.actions.length
+
 								# console.log "\n\n", action
 
 								# TODO: this is interim code, remove it at some point
@@ -746,11 +770,15 @@ module.exports =
 								copernica.subprofile id, fields, options, next4
 
 							), ( err, data ) ->
+								log "map on session.actions complete"
+
 								times = []
 								for row in session.actions when row._time
 									times.push new Date row._time
 
 								finishSession = ( err ) ->
+									log "finishing session"
+
 									return next3 err if err
 
 									id =
@@ -765,6 +793,8 @@ module.exports =
 
 								# Handle baskets if they exist
 								if basket = session.basket
+									log "starting basket handling"
+
 									# construct the object to be sent to copernica
 									order =
 										'order_status': 'basket'
@@ -790,6 +820,8 @@ module.exports =
 									# TODO: could this be parallel?
 									async.series [
 										doOrder = ( next4 ) ->
+											log "doing order for current session"
+
 											id =
 												'order_id': session._id
 											options =
@@ -797,6 +829,8 @@ module.exports =
 											copernica.subprofile id, order, options, next4
 
 										doBasket = ( next4 ) ->
+											log "doing basket for current session"
+
 											id =
 												'session_id': session._id
 											options =
@@ -804,6 +838,8 @@ module.exports =
 											copernica.subprofile id, basket_out, options, next4
 
 										doLineItems = ( next4 ) ->
+											log "doing line items for current session"
+
 											# DEAD LEGACY ONLY CODE
 											# TODO: come up with a better way to do this
 											options =
@@ -812,6 +848,8 @@ module.exports =
 												'orderID': session._id
 
 											doLineItem = ( item, next45 ) ->
+												log "map on basket.line_items - current item size", JSON.stringify( item ).length, " - iteration", ++counts[4], " of ", basket.line_items.length
+
 												urlparts = item.product_url.split '/'
 												id.SKU = urlparts[4]
 												product =
@@ -820,12 +858,15 @@ module.exports =
 													'Category': urlparts[5]
 												copernica.subprofile id, product, options, next45
 
+											counts[4] = 0
 											async.mapSeries basket.line_items, doLineItem, next4
 									], finishSession
 								else
 									finishSession( )
 						), next2
 					), ( err, results ) ->
+						log "current profile completed"
+
 						meaningfulResult =
 							'profile_id': profile._id
 							'copernica_id': copernica.currentProfile.id
