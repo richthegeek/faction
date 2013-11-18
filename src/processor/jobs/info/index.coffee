@@ -215,5 +215,5 @@ module.exports = (job, done) ->
 				done err, result
 
 
-module.exports.concurrency = 1
+module.exports.concurrency = 2
 module.exports.timeout = 1000
