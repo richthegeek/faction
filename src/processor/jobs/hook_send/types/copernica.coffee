@@ -695,6 +695,7 @@ module.exports =
 						collectionsMap[row.name] = i
 					# console.log 'collections map', collectionsMap
 
+					# TODO: should I use mapSeries?
 					async.map profile.devices, ( ( device, next2 ) ->
 						async.map device.sessions, ( ( session, next3 ) ->
 							# TODO: this is pretty hacky. need an ID on actions
@@ -749,15 +750,80 @@ module.exports =
 								for row in session.actions when row._time
 									times.push new Date row._time
 
-								id =
-									'Session_ID': session._id
-								fields =
-									'Length_of_visit': humanTime ( Math.max.apply( Math, times ) - Math.min.apply( Math, times ) ) / 1000
-									'Number_of_pages_visited': session.actions.length
-									'Start_time': ISOtoCopernica session.actions[0]._time
-								options =
-									'collection': collections[collectionsMap['Visits']]
-								copernica.subprofile id, fields, options, next3
+								finishSession = ( err ) ->
+									return next3 err if err
+
+									id =
+										'Session_ID': session._id
+									fields =
+										'Length_of_visit': humanTime ( Math.max.apply( Math, times ) - Math.min.apply( Math, times ) ) / 1000
+										'Number_of_pages_visited': session.actions.length
+										'Start_time': ISOtoCopernica session.actions[0]._time
+									options =
+										'collection': collections[collectionsMap['Visits']]
+									copernica.subprofile id, fields, options, next3
+
+								# Handle baskets if they exist
+								if basket = session.basket
+									# construct the object to be sent to copernica
+									order =
+										'order_status': 'basket'
+										'date': ISOtoCopernica session._updated
+										'total': basket.prices.ordertotal ? 0
+									basket_out =
+										'value': basket.prices.subtotal ? 0
+										'Number_of_items': basket.line_items.length
+										'status': 'live'
+
+									max = 0
+									if basket.stage?
+										for key, val of basket.stage when Math.max( max, val = new Date( val ) ) is val
+											max = val
+											order.order_status = key
+
+									if order.status is 'completed'
+										basket_out.status = 'ordered'
+									else if ( new Date( ) - new Date session_updated ) > 180000
+										basket_out.status = 'abandoned'
+
+									# Do the actual sending
+									# TODO: could this be parallel?
+									async.series [
+										doOrder = ( next4 ) ->
+											id =
+												'order_id': session._id
+											options =
+												'collection': collections[collectionsMap['Orders']]
+											copernica.subprofile id, order, options, next4
+
+										doBasket = ( next4 ) ->
+											id =
+												'session_id': session._id
+											options =
+												'collection': collections[collectionsMap['Basket']]
+											copernica.subprofile id, basket_out, options, next4
+
+										doLineItems = ( next4 ) ->
+											# DEAD LEGACY ONLY CODE
+											# TODO: come up with a better way to do this
+											options =
+												'collection': collections[collectionsMap['Products']]
+											id =
+												'orderID': session._id
+
+											doLineItem = ( item, next45 ) ->
+												urlparts = item.product_url.split '/'
+												id.SKU = urlparts[4]
+												product =
+													'Name': item.name
+													'Price': item.price
+													'Category': urlparts[5]
+												copernica.subprofile id, product, options, next45
+
+											async.mapSeries basket.line_items, doLineItem, next4
+									], finishSession
+								else
+									finishSession( )
 						), next2
 					), ( err, results ) ->
 						meaningfulResult =
