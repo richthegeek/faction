@@ -46,6 +46,7 @@ module.exports = (job, done) ->
 			model = @
 			@load {_id: row.fact_id}, true, (err, fact = {}) ->
 				if err or not fact._id
+
 					return next err or 'Bad ID'
 
 				# if the fact was updated, bail early - a later fact update should pick it up
