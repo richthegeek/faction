@@ -66,9 +66,6 @@ module.exports = (job, done) ->
 		mappings = results.mappings.filter (mapping) -> mapping and mapping.info_type is row._type
 		settings = results.settings
 
-		if accountID is 'c4eadda5e34ad792'
-			console.log 'CPL Renewables', row, mappings
-
 		###
 		A sample mapping:
 			info_type: 'visit',
