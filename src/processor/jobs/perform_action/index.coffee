@@ -2,9 +2,6 @@ async = require 'async'
 Cache = require 'shared-cache'
 
 module.exports = (job, done) ->
-
-	job.save()
-
 	account = null
 	accountID = job.data.account
 	time = new Date parseInt job.created_at
@@ -96,4 +93,4 @@ module.exports = (job, done) ->
 
 			done err
 
-
+module.exports.disabled = true

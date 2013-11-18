@@ -48,18 +48,19 @@ server.on 'after', (req, res, route, err) ->
 	time = new Date - res._time
 	req.route ?= {}
 	req.route.path ?= req._path ? '/'
-	console.log "#{req.method} #{req.route.path} (#{time}ms): #{res.statusCode}"
+	res.logMessage ?= ''
+	console.log "#{req.method} #{req.route.path} (#{time}ms): #{res.statusCode} #{res.logMessage}"
 
 	nice_path = req.route.path.slice(1).replace /[^a-z0-9_]+/g, '_'
 	if nice_path is ''
 		nice_path = 'frontpage'
 
-	stats.increment 'api.requests', 1
-	stats.timing 'api.response', time
-	stats.timing "api.response.#{req.method.toLowerCase()}.#{nice_path}", time
+	# stats.increment 'api.requests', 1
+	# stats.timing 'api.response', time
+	# stats.timing "api.response.#{req.method.toLowerCase()}.#{nice_path}", time
 
 	if res.statusCode.toString().slice(0,1) isnt '2'
-		stats.increment 'api.errors', 1
+		# stats.increment 'api.errors', 1
 		if 0 > res.bodyData.indexOf '"Endpoint not found"'
 			console.error res.bodyData
 

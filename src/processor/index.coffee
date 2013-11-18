@@ -59,6 +59,7 @@ processJobs = (type, ready) ->
 	console.log "Processing #{multi}x '#{type}' tasks"
 
 	times = []
+	this_processing = 0
 	idle =false
 	setInterval (() ->
 		pad = (str, size = 5) ->
@@ -83,6 +84,8 @@ processJobs = (type, ready) ->
 			console.log "+", pad(type, 15), pad(times.length), pad("#{percent}%"), [mean, min, max].join(" / ")
 			idle = false
 			times = []
+		else if this_processing > 0
+			console.log "#", pad(type, 15), "working on #{this_processing} long jobs"
 		else
 			if not idle
 				console.log "`", pad(type, 15), 'idle'
@@ -97,11 +100,16 @@ processJobs = (type, ready) ->
 
 		start = new Date
 		processing++
+		this_processing++
 		processor job, (err, result) ->
+
+			processing--
+			this_processing--
+
 			end = new Date
 			time = (end - start)
-			stats.increment "kue.#{type}", 1
-			stats.timing "kue.#{type}", time
+			# stats.increment "kue.#{type}", 1
+			# stats.timing "kue.#{type}", time
 			# console.log "+", type, "#{time}ms", job.data.title
 
 			times.push time
@@ -110,7 +118,6 @@ processJobs = (type, ready) ->
 				console.error '!', type, job.data.title, err
 				job.log err
 
-			processing--
 			complete()
 
 	ready()
