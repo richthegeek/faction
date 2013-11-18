@@ -769,9 +769,9 @@ module.exports =
 									order =
 										'order_status': 'basket'
 										'date': ISOtoCopernica session._updated
-										'total': basket.ordertotal?
+										'total': basket.prices.ordertotal ? 0
 									basket_out =
-										'value': basket.subtotal?
+										'value': basket.prices.subtotal ?
 										'Number_of_items': basket.line_items.length
 										'status': 'live'
 
