@@ -90,4 +90,4 @@ module.exports = (job, done) ->
 
 # Up the conccurency here
 module.exports.disabled = true
-module.exports.concurrency = 5
+module.exports.concurrency = 1

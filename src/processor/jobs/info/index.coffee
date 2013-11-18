@@ -6,6 +6,7 @@ mergeFacts = require './merge_facts'
 markForeignFacts = require './mark_foreign_facts'
 addShim = require './add_shim'
 {evaluate, parseObject} = require './eval'
+{getColumn, setColumn, deleteColumn} = require './column_ops'
 
 module.exports = (job, done) ->
 
@@ -143,6 +144,10 @@ module.exports = (job, done) ->
 
 							parseObject mapping.fields, context, (obj) ->
 								obj._id = query._id
+
+								for key, val of obj when key.indexOf('.') >= 0
+									delete obj[key]
+									setColumn obj, key, val
 
 								next null, {
 									model: model

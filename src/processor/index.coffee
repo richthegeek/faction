@@ -60,7 +60,7 @@ processJobs = (type, ready) ->
 
 	times = []
 	this_processing = 0
-	idle =false
+	idle = false
 	setInterval (() ->
 		pad = (str, size = 5) ->
 			str = str.toString()
@@ -84,9 +84,10 @@ processJobs = (type, ready) ->
 			console.log "+", pad(type, 15), pad(times.length), pad("#{percent}%"), [mean, min, max].join(" / ")
 			idle = false
 			times = []
-		else if this_processing > 0
+		if this_processing > 0
 			console.log "#", pad(type, 15), "working on #{this_processing} long jobs"
-		else
+
+		if times.length is 0 and this_processing is 0
 			if not idle
 				console.log "`", pad(type, 15), 'idle'
 			idle = true
@@ -101,6 +102,11 @@ processJobs = (type, ready) ->
 		start = new Date
 		processing++
 		this_processing++
+
+		# try re-require to GC
+		processor = null
+		processor = require jobPath
+
 		processor job, (err, result) ->
 
 			processing--

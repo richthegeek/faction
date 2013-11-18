@@ -38,6 +38,7 @@ module.exports = (settings, old_fact, mid_fact) ->
 			b = Number(old_fact[field]) or Math.max()
 			setColumn new_fact, field, Math.max a, b
 
+	# handle increment calls.
 	n_f = traverse(new_fact)
 	o_f = traverse(old_fact)
 	n_f.paths().filter((path) -> path[path.length - 1] is '$inc').forEach (path) ->
@@ -45,5 +46,10 @@ module.exports = (settings, old_fact, mid_fact) ->
 		inc_by = n_f.get(path)
 		old_val = o_f.get(sub_path) | 0
 		n_f.set(sub_path, old_val + inc_by)
+
+	# convert any dot notations into setColumn calls.
+	for key, val of new_fact when key.indexOf('.') >= 0
+		delete new_fact[key]
+		setColumn new_fact, key, val
 
 	return new_fact
