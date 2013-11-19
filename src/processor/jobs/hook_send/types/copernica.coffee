@@ -804,7 +804,7 @@ module.exports =
 									order =
 										'order_status': 'basket'
 										'date': ISOtoCopernica session._updated
-										'total': 100 * parseFloat ( basket.price?.items ? 0 ) - ( basket.price?.specialdiscount ? 0 )
+										'total': 100 * ( parseFloat( basket.price?.items ? 0 ) - parseFloat( basket.price?.specialdiscount ? 0 ) )
 									basket_out =
 										'value': order.total
 										'Number_of_items': basket.basket?.length ? 0
