@@ -679,8 +679,8 @@ module.exports =
 			log "map on data - current profile size", JSON.stringify( profile ).length, " - iteration", ++counts[0], " of ", data.length
 			_log_current_profile = profile._id
 
-			if profile._id in ['1', '100', 'clickheretoemailjohn@gmail.com']
-				return next( )
+			# if profile._id in ['1', '100', 'clickheretoemailjohn@gmail.com']
+			# 	return next( )
 
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
@@ -696,7 +696,7 @@ module.exports =
 
 					data_fields =
 						'uid': profile._id
-						'LeadScore': profile.score.score or 0
+						'LeadScore': profile.score?.score or 0
 					# TODO: device info
 					copernica.profile id_fields, data_fields, next1
 
@@ -716,18 +716,18 @@ module.exports =
 
 					# TODO: should I use mapSeries?
 					counts[1] = 0
-					async.map profile.devices, ( ( device, next2 ) ->
+					async.map profile.devices or [], ( ( device, next2 ) ->
 						log "map on profile.device - current device size", JSON.stringify( device ).length, " - iteration", ++counts[1], " of ", profile.devices.length
 
 						counts[2] = 0
-						async.map device.sessions, ( ( session, next3 ) ->
+						async.map device.sessions or [], ( ( session, next3 ) ->
 							log "map on device.sessions - current session size", JSON.stringify( session ).length, " - iteration", ++counts[2], " of ", device.sessions.length
 
 							# TODO: this is pretty hacky. need an ID on actions
 							pvid = 0
 
 							counts[3] = 0
-							async.map session.actions, ( ( action, next4 ) ->
+							async.map session.actions or [], ( ( action, next4 ) ->
 								log "map on session.actions - current action size", JSON.stringify( action ).length, " - iteration", ++counts[3], " of ", session.actions.length
 
 								# console.log "\n\n", action
@@ -804,9 +804,9 @@ module.exports =
 									order =
 										'order_status': 'basket'
 										'date': ISOtoCopernica session._updated
-										'total': basket.price?.ordertotal ? 0
+										'total': 100 * parseFloat ( basket.price?.ordertotal ? 0 )
 									basket_out =
-										'value': basket.price?.subtotal ? 0
+										'value': 100 * parseFloat ( basket.price?.subtotal ? 0 )
 										'Number_of_items': basket.basket?.length ? 0
 										'status': 'live'
 
@@ -859,15 +859,12 @@ module.exports =
 												id.SKU = urlparts[4]
 												product =
 													'Name': item.name
-													'Price': item.price
+													'Price': 100 * parseFloat item.price
 													'Category': urlparts[5]
 												copernica.subprofile id, product, options, next45
 
 											counts[4] = 0
-											if basket.basket?
-												async.mapSeries basket.basket, doLineItem, next4
-											else
-												next4( )
+											async.mapSeries basket.basket or [], doLineItem, next4
 									], finishSession
 								else
 									finishSession( )
