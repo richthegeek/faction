@@ -799,10 +799,10 @@ module.exports =
 									order =
 										'order_status': 'basket'
 										'date': ISOtoCopernica session._updated
-										'total': basket.prices?.ordertotal ? 0
+										'total': basket.price?.ordertotal ? 0
 									basket_out =
-										'value': basket.prices?.subtotal ? 0
-										'Number_of_items': basket.line_items.length
+										'value': basket.price?.subtotal ? 0
+										'Number_of_items': basket.basket?.length ? 0
 										'status': 'live'
 
 									max = 0
@@ -813,7 +813,7 @@ module.exports =
 
 									if order.status is 'completed'
 										basket_out.status = 'ordered'
-									else if ( new Date( ) - new Date session_updated ) > 180000
+									else if ( new Date( ) - new Date session._updated ) > 180000
 										basket_out.status = 'abandoned'
 
 									# Do the actual sending
@@ -848,7 +848,7 @@ module.exports =
 												'orderID': session._id
 
 											doLineItem = ( item, next45 ) ->
-												log "map on basket.line_items - current item size", JSON.stringify( item ).length, " - iteration", ++counts[4], " of ", basket.line_items.length
+												log "map on basket.basket - current item size", JSON.stringify( item ).length, " - iteration", ++counts[4], " of ", basket.basket.length
 
 												urlparts = item.product_url.split '/'
 												id.SKU = urlparts[4]
@@ -859,7 +859,11 @@ module.exports =
 												copernica.subprofile id, product, options, next45
 
 											counts[4] = 0
-											async.mapSeries basket.line_items, doLineItem, next4
+											if basket.basket?
+												async.mapSeries basket.basket, doLineItem, next4
+											else
+												next4( )
+
 									], finishSession
 								else
 									finishSession( )
