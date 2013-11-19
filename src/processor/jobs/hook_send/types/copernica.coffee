@@ -680,7 +680,7 @@ module.exports =
 			_log_current_profile = profile._id
 
 			if profile._id in ['1', '100', 'clickheretoemailjohn@gmail.com']
-				callback( )
+				return next( )
 
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
