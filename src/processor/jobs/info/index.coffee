@@ -1,27 +1,17 @@
+async = require 'async'
+Cache = require 'shared-cache'
+moment = require 'moment'
+
+mergeFacts = require './merge_facts'
+markForeignFacts = require './mark_foreign_facts'
+addShim = require './add_shim'
+{evaluate, parseObject} = require './eval'
+{getColumn, setColumn, deleteColumn} = require './column_ops'
+
 module.exports =
 
 	concurrency: 1
 	timeout: 1000
-
-	setup: (context, done) ->
-		context.async = require 'async'
-		context.Cache = require 'shared-cache'
-		context.moment = require 'moment'
-
-		context.mergeFacts = require './merge_facts'
-		context.markForeignFacts = require './mark_foreign_facts'
-		context.addShim = require './add_shim'
-
-		e = require './eval'
-		context.evaluate = e.evaluate
-		context.parseObject = e.parseObject
-
-		ops = require './column_ops'
-		context.getColumn = ops.getColumn
-		context.setColumn = ops.setColumn
-		context.deleteColumn = ops.deleteColumn
-
-		done null, context
 
 	exec: (job, done) ->
 		job.progress 0, 3

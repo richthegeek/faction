@@ -20,9 +20,9 @@ global.loadAccount = (accountID, next) ->
 jobs.promote()
 
 # execute all known job types
-global.async = require 'async'
-global.fs = require 'fs'
-global.path = require 'path'
+async = require 'async'
+fs = require 'fs'
+path = require 'path'
 exec = require('child_process').exec
 
 jobsPath = path.resolve __dirname, './jobs'
@@ -118,24 +118,23 @@ processJobs = (type, ready) ->
 			context[key] = val
 
 		# allow the process to modify the context
-		processor.setup context, (err, context) ->
-			processor.exec.call context, job, (err, result) ->
-				processing--
-				this_processing--
+		processor.exec job, (err, result) ->
+			processing--
+			this_processing--
 
-				end = new Date
-				time = (end - start)
-				# stats.increment "kue.#{type}", 1
-				# stats.timing "kue.#{type}", time
-				console.log "$", type, "#{time}ms", job.data.title
+			end = new Date
+			time = (end - start)
+			# stats.increment "kue.#{type}", 1
+			# stats.timing "kue.#{type}", time
+			console.log "$", type, "#{time}ms", job.data.title
 
-				times.push time
+			times.push time
 
-				if err
-					console.error '!', type, job.data.title, err
-					job.log err
+			if err
+				console.error '!', type, job.data.title, err
+				job.log err
 
-				complete()
+			complete()
 
 	ready()
 

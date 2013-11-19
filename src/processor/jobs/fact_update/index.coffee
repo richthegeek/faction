@@ -1,15 +1,13 @@
+http = require('./http')
+q = require 'q'
+async = require 'async'
+Cache = require 'shared-cache'
+
 module.exports =
 
-	disabled: true
+	disabled: false
 	concurrency: 1
 	timeout: 10000
-
-	setup: (context, done) ->
-		context.http = require './http'
-		context.q = require 'q'
-		context.async = require 'async'
-		context.Cache = require 'shared-cache'
-		done null, context
 
 	exec: (job, done) ->
 		account = null
