@@ -126,7 +126,7 @@ processJobs = (type, ready) ->
 			time = (end - start)
 			# stats.increment "kue.#{type}", 1
 			# stats.timing "kue.#{type}", time
-			console.log "$", type, "#{time}ms", job.data.title
+			# console.log "$", type, "#{time}ms", job.data.title
 
 			times.push time
 
