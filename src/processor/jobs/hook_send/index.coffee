@@ -1,3 +1,4 @@
+async = require 'async'
 path = require 'path'
 request = require 'request'
 Cache = require 'shared-cache'
