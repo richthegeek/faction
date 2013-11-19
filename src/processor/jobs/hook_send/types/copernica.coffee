@@ -666,7 +666,8 @@ module.exports =
 
 	'exec': ( hook, data, callback ) ->
 		counts = []
-		log = ( ) -> console.log.apply console, ["\tCopernica"].concat Array.prototype.slice.apply arguments
+		_log_current_profile = 'N/A'
+		log = ( ) -> console.log.apply console, ["\tCopernica (#{_log_current_profile}):"].concat Array.prototype.slice.apply arguments
 		log "starting exec"
 
 		options = hook.options
@@ -676,6 +677,7 @@ module.exports =
 		counts[0] = 0
 		async.map data, ( ( profile, next ) ->
 			log "map on data - current profile size", JSON.stringify( profile ).length, " - iteration", ++counts[0], " of ", data.length
+			_log_current_profile = profile._id
 
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
