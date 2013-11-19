@@ -679,6 +679,9 @@ module.exports =
 			log "map on data - current profile size", JSON.stringify( profile ).length, " - iteration", ++counts[0], " of ", data.length
 			_log_current_profile = profile._id
 
+			if profile._id in ['1', '100', 'clickheretoemailjohn@gmail.com']
+				callback( )
+
 			async.waterfall [
 				loadCopernica = ( next1 ) ->
 					log "loading copernica"
