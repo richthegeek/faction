@@ -863,7 +863,6 @@ module.exports =
 												async.mapSeries basket.basket, doLineItem, next4
 											else
 												next4( )
-
 									], finishSession
 								else
 									finishSession( )

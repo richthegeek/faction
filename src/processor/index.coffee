@@ -20,11 +20,10 @@ global.loadAccount = (accountID, next) ->
 jobs.promote()
 
 # execute all known job types
-global.async = require 'async'
-global.fs = require 'fs'
-global.path = require 'path'
+async = require 'async'
+fs = require 'fs'
+path = require 'path'
 exec = require('child_process').exec
-Contextify = require 'contextify'
 
 jobsPath = path.resolve __dirname, './jobs'
 
@@ -64,8 +63,6 @@ processJobs = (type, ready) ->
 		return ready()
 
 	console.log "Processing #{multi}x '#{type}' tasks"
-
-	script = Contextify.createScript 'exec = ' + processor.exec.toString() + '; exec(job, done)'
 
 	times = []
 	this_processing = 0
@@ -121,27 +118,23 @@ processJobs = (type, ready) ->
 			context[key] = val
 
 		# allow the process to modify the context
-		processor.setup context, (err, context) ->
-			# turn it into a contextify context and run it in situ
-			context.done = (err, result) ->
-				processing--
-				this_processing--
+		processor.exec job, (err, result) ->
+			processing--
+			this_processing--
 
-				end = new Date
-				time = (end - start)
-				# stats.increment "kue.#{type}", 1
-				# stats.timing "kue.#{type}", time
-				console.log "$", type, "#{time}ms", job.data.title
+			end = new Date
+			time = (end - start)
+			# stats.increment "kue.#{type}", 1
+			# stats.timing "kue.#{type}", time
+			# console.log "$", type, "#{time}ms", job.data.title
 
-				times.push time
+			times.push time
 
-				if err
-					console.error '!', type, job.data.title, err
-					job.log err
+			if err
+				console.error '!', type, job.data.title, err
+				job.log err
 
-				complete()
-			context = Contextify.createContext context
-			script.runInContext context
+			complete()
 
 	ready()
 

@@ -1,27 +1,17 @@
+async = require 'async'
+Cache = require 'shared-cache'
+moment = require 'moment'
+
+mergeFacts = require './merge_facts'
+markForeignFacts = require './mark_foreign_facts'
+addShim = require './add_shim'
+{evaluate, parseObject} = require './eval'
+{getColumn, setColumn, deleteColumn} = require './column_ops'
+
 module.exports =
 
 	concurrency: 1
 	timeout: 1000
-
-	setup: (context, done) ->
-		context.async = require 'async'
-		context.Cache = require 'shared-cache'
-		context.moment = require 'moment'
-
-		context.mergeFacts = require './merge_facts'
-		context.markForeignFacts = require './mark_foreign_facts'
-		context.addShim = require './add_shim'
-
-		e = require './eval'
-		context.evaluate = e.evaluate
-		context.parseObject = e.parseObject
-
-		ops = require './column_ops'
-		context.getColumn = ops.getColumn
-		context.setColumn = ops.setColumn
-		context.deleteColumn = ops.deleteColumn
-
-		done null, context
 
 	exec: (job, done) ->
 		job.progress 0, 3
@@ -171,39 +161,29 @@ module.exports =
 									}
 
 			combineMappings = (info, next) ->
-				console.log 'D0'
-
 				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
 
-				console.log 'D1'
 				# remove this stuff, it gets in the way.
 				for key of set.foreign_keys
 					info.fact.del key
 
-
-				console.log 'D2'
 				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
 				set.time = time
 				fact = mergeFacts set, info.fact.data, info.info
 
-				console.log 'D3'
 				if fact.data?.data?
 					delete fact.data
 
-				console.log 'D4'
 				for key, mode of set.field_modes when mode is 'delete'
 					info.fact.del.call fact, key
 
 				fact._updated = new Date
 
-				console.log 'D5'
 				if not fact._id
 					return next()
 
-				console.log 'D6'
 				# save this into the target collection, move on
 				info.model.table.save fact, (err) ->
-					console.log 'D7'
 					next err, {
 						fact_id: fact._id,
 						fact_type: info.mapping.fact_type,

@@ -1,12 +1,12 @@
+async = require 'async'
+path = require 'path'
+request = require 'request'
+Cache = require 'shared-cache'
+
 module.exports =
 
-	disabled: true
+	disabled: false
 	concurrency: 1
-
-	setup: (context, done) ->
-		context.path = require 'path'
-		context.request = require 'request'
-		context.Cache = require 'shared-cache'
 
 	exec: (job, done) ->
 		account = null
