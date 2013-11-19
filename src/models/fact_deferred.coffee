@@ -89,16 +89,13 @@ module.exports = class Fact_deferred_Model extends Model
 		if (query instanceof mongodb.ObjectID) or (typeof query in ['string', 'number'])
 			query = {_id: query}
 
-		console.log 1
 		@table.findOne query, (err, row) =>
 			@data = row or {}
 			if err or not row
 				return callback err, row
 
 			if defer
-				console.log 2
 				return @defer () =>
-					console.log 3
 					callback.call @, err, @data, query
 
 			callback.call @, err, @data, query
