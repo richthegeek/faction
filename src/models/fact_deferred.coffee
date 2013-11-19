@@ -291,23 +291,9 @@ Fact_deferred_Model.parseObject = (obj, context, callback) ->
 			@value = val
 			nodes.push @
 
-	console.log 'pre iter', obj?, context?, callback?
-	if not (obj? and context? and callback?)
-		console.log 'fail1'
-		process.exit 0
-
 	iter = (node, next) =>
-		console.log 'in iter', node?.value?, context?, next?
-		if not (node? and next?)
-			console.log 'fail2'
-			process.exit 0
-		if not Fact_deferred_Model?
-			console.log 'no model'
-			process.exit 0
-
 		Fact_deferred_Model.evaluate node.value, context, (err, newval) =>
 			if err
-				console.log 'ITER ERR', arguments
 				process.exit 0
 			next err, node.update newval, true
 

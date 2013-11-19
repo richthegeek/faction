@@ -799,10 +799,10 @@ module.exports =
 									order =
 										'order_status': 'basket'
 										'date': ISOtoCopernica session._updated
-										'total': basket.prices.ordertotal ? 0
+										'total': basket.prices?.ordertotal ? 0
 									basket_out =
-										'value': basket.prices.subtotal ? 0
-										'Number_of_items': basket.line_items.length
+										'value': basket.prices?.subtotal ? 0
+										'Number_of_items': basket.line_items?.length
 										'status': 'live'
 
 									max = 0
@@ -813,7 +813,7 @@ module.exports =
 
 									if order.status is 'completed'
 										basket_out.status = 'ordered'
-									else if ( new Date( ) - new Date session_updated ) > 180000
+									else if ( new Date( ) - new Date session.updated ) > 180000
 										basket_out.status = 'abandoned'
 
 									# Do the actual sending
@@ -859,7 +859,7 @@ module.exports =
 												copernica.subprofile id, product, options, next45
 
 											counts[4] = 0
-											async.mapSeries basket.line_items, doLineItem, next4
+											async.mapSeries basket.line_items ? [], doLineItem, next4
 									], finishSession
 								else
 									finishSession( )
