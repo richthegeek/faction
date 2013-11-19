@@ -823,12 +823,19 @@ module.exports =
 										basket_out.status = 'ordered'
 									else if ( new Date( ) - new Date session._updated ) > 180000
 										basket_out.status = 'abandoned'
+									else if order.order_status is 'basket'
+										basket_out.status = 'live'
+									else
+										basket_out.status = order.order_status
 
 									# Do the actual sending
 									# TODO: could this be parallel?
 									async.series [
 										doOrder = ( next4 ) ->
 											log "doing order for current session"
+
+											if order.order_status isnt 'completed'
+												return next4( )
 
 											id =
 												'order_id': session._id
