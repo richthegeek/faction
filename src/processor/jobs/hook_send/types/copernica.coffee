@@ -801,10 +801,11 @@ module.exports =
 									log "starting basket handling"
 
 									# construct the object to be sent to copernica
+									# TODO: remove dead legacy specific code
 									order =
 										'order_status': 'basket'
 										'date': ISOtoCopernica session._updated
-										'total': 100 * ( parseFloat( basket.price?.items ? 0 ) - parseFloat( basket.price?.specialdiscount ? 0 ) )
+										'total': 100 * ( parseFloat( basket.price?.discountedtotal ? 0 ) or ( parseFloat( basket.price?.items ? 0 ) - parseFloat( basket.price?.specialdiscount ? 0 ) ) )
 									basket_out =
 										'value': order.total
 										'Number_of_items': basket.basket?.length ? 0
