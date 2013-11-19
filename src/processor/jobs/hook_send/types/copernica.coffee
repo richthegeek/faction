@@ -806,17 +806,19 @@ module.exports =
 										'date': ISOtoCopernica session._updated
 										'total': 100 * parseFloat ( basket.price?.ordertotal ? 0 )
 									basket_out =
-										'value': 100 * parseFloat ( basket.price?.subtotal ? 0 )
+										'value': 100 * parseFloat ( basket.price?.items ? 0 )
 										'Number_of_items': basket.basket?.length ? 0
 										'status': 'live'
 
-									max = 0
 									if basket.stage?
-										for key, val of basket.stage when Math.max( max, val = new Date( val ) ) is val
-											max = val
-											order.order_status = key
+										max = 0
+										for key, val of basket.stage
+											val = +new Date val
+											if val is Math.max max, val
+												max = val
+												order.order_status = key
 
-									if order.status is 'completed'
+									if order.order_status is 'completed'
 										basket_out.status = 'ordered'
 									else if ( new Date( ) - new Date session._updated ) > 180000
 										basket_out.status = 'abandoned'
