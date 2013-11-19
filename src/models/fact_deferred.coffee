@@ -89,13 +89,16 @@ module.exports = class Fact_deferred_Model extends Model
 		if (query instanceof mongodb.ObjectID) or (typeof query in ['string', 'number'])
 			query = {_id: query}
 
+		console.log 1
 		@table.findOne query, (err, row) =>
 			@data = row or {}
 			if err or not row
 				return callback err, row
 
 			if defer
+				console.log 2
 				return @defer () =>
+					console.log 3
 					callback.call @, err, @data, query
 
 			callback.call @, err, @data, query
@@ -288,8 +291,24 @@ Fact_deferred_Model.parseObject = (obj, context, callback) ->
 			@value = val
 			nodes.push @
 
+	console.log 'pre iter', obj?, context?, callback?
+	if not (obj? and context? and callback?)
+		console.log 'fail1'
+		process.exit 0
+
 	iter = (node, next) =>
+		console.log 'in iter', node?.value?, context?, next?
+		if not (node? and next?)
+			console.log 'fail2'
+			process.exit 0
+		if not Fact_deferred_Model?
+			console.log 'no model'
+			process.exit 0
+
 		Fact_deferred_Model.evaluate node.value, context, (err, newval) =>
+			if err
+				console.log 'ITER ERR', arguments
+				process.exit 0
 			next err, node.update newval, true
 
 	async.each nodes, iter, () -> callback obj

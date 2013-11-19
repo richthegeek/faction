@@ -1,219 +1,238 @@
-async = require 'async'
-Cache = require 'shared-cache'
-moment = require 'moment'
+module.exports =
 
-mergeFacts = require './merge_facts'
-markForeignFacts = require './mark_foreign_facts'
-addShim = require './add_shim'
-{evaluate, parseObject} = require './eval'
-{getColumn, setColumn, deleteColumn} = require './column_ops'
+	concurrency: 1
+	timeout: 1000
 
-module.exports = (job, done) ->
+	setup: (context, done) ->
+		context.async = require 'async'
+		context.Cache = require 'shared-cache'
+		context.moment = require 'moment'
 
-	job.progress 0, 3
+		context.mergeFacts = require './merge_facts'
+		context.markForeignFacts = require './mark_foreign_facts'
+		context.addShim = require './add_shim'
 
-	account = null
-	accountID = job.data.account
-	time = new Date parseInt job.created_at
-	row = job.data.data
+		e = require './eval'
+		context.evaluate = e.evaluate
+		context.parseObject = e.parseObject
 
-	fns = {}
-	fns.account = (next) ->
-		loadAccount accountID, (err, acc) ->
-			if err or not acc
-				return console.log 'Failed to get account', err acc
-			account = acc
-			next err
+		ops = require './column_ops'
+		context.getColumn = ops.getColumn
+		context.setColumn = ops.setColumn
+		context.deleteColumn = ops.deleteColumn
 
-	fns.setup = (next) ->
-		account.mappings ?= Cache.create 'info-mappings-' + accountID, true, (key, next) ->
-			account.database.collection('info_mappings').find().toArray next
+		done null, context
 
-		account.settings ?= Cache.create 'fact-settings-' + accountID, true, (key, next) ->
-			account.database.collection('fact_settings').find().toArray (err, settings) ->
-				if err or not settings
-					return next err, settings
+	exec: (job, done) ->
+		job.progress 0, 3
 
-				# create indexes on all thse foreign columns.
-				collections = {}
-				ensureIndex = (fk, next) ->
-					collections[fk.fact_type] ?= account.database.collection Fact_Model.collectionname fk.fact_type
+		account = null
+		accountID = job.data.account
+		time = new Date parseInt job.created_at
+		row = job.data.data
 
-					index = {}
-					for key, val of fk.query
-						index[key] = 1
+		fns = {}
+		fns.account = (next) ->
+			loadAccount accountID, (err, acc) ->
+				if err or not acc
+					return console.log 'Failed to get account', err acc
+				account = acc
+				next err
 
-					if index._id
-						return next()
+		fns.setup = (next) ->
+			account.mappings ?= Cache.create 'info-mappings-' + accountID, true, (key, next) ->
+				account.database.collection('info_mappings').find().toArray next
 
-					collections[fk.fact_type].ensureIndex index, next
+			account.settings ?= Cache.create 'fact-settings-' + accountID, true, (key, next) ->
+				account.database.collection('fact_settings').find().toArray (err, settings) ->
+					if err or not settings
+						return next err, settings
 
-				fks = []
-				for setting in settings
-					for key, fk of setting.foreign_keys
-						fks.push fk
+					# create indexes on all thse foreign columns.
+					collections = {}
+					ensureIndex = (fk, next) ->
+						collections[fk.fact_type] ?= account.database.collection Fact_Model.collectionname fk.fact_type
 
-				async.map fks, ensureIndex, () ->
-					next err, settings
+						index = {}
+						for key, val of fk.query
+							index[key] = 1
 
-		next()
+						if index._id
+							return next()
 
-	fns.mappings = (next) -> account.mappings.get (e, r) -> next e, r
-	fns.settings = (next) -> account.settings.get (e, r) -> next e, r
+						collections[fk.fact_type].ensureIndex index, next
 
-	async.series fns, (err, results) ->
-		job.progress 1, 3
+					fks = []
+					for setting in settings
+						for key, fk of setting.foreign_keys
+							fks.push fk
 
-		mappings = results.mappings.filter (mapping) -> mapping and mapping.info_type is row._type
-		settings = results.settings
+					async.map fks, ensureIndex, () ->
+						next err, settings
 
-		###
-		A sample mapping:
-			info_type: 'visit',
-			fact_type: 'sessions',
-			fact_identifier: 'info.sid',
-			fields:
-				uid: 'info.uid'
-				visits:
-					url: 'info.url',
-					time: 'new Date'
+			next()
 
-		A sample fact setting:
-			fact_type: 'sessions'
-			field_modes:
-				actions: 'all'
-				score:
-					eval: "
-						async();
-						http.request("http://trakapo.com/score", {})
+		fns.mappings = (next) -> account.mappings.get (e, r) -> next e, r
+		fns.settings = (next) -> account.settings.get (e, r) -> next e, r
 
-					"
-			foreign_keys:
-				user:
-					fact_type: 'users'
-					has: 'one'
-					query:
-						_id: 'fact.uid'
+		async.series fns, (err, results) ->
+			job.progress 1, 3
 
-		With this we need to:
-		 - find the fact_identifier in the facts_sessions collection
-		 - load the fact settings for the "sessions" fact (cache!)
-		 - merge the new info into the existing fact
-		 - save, ping any FKs as updated.
-		###
+			mappings = results.mappings.filter (mapping) -> mapping and mapping.info_type is row._type
+			settings = results.settings
 
-		# t 'start', mappings.length
+			###
+			A sample mapping:
+				info_type: 'visit',
+				fact_type: 'sessions',
+				fact_identifier: 'info.sid',
+				fields:
+					uid: 'info.uid'
+					visits:
+						url: 'info.url',
+						time: 'new Date'
 
-		parseMappings = (mapping, next) ->
-			query = _id: evaluate mapping.fact_identifier, {info: row}
+			A sample fact setting:
+				fact_type: 'sessions'
+				field_modes:
+					actions: 'all'
+					score:
+						eval: "
+							async();
+							http.request("http://trakapo.com/score", {})
 
-			if not query._id?
-				return next()
+						"
+				foreign_keys:
+					user:
+						fact_type: 'users'
+						has: 'one'
+						query:
+							_id: 'fact.uid'
 
-			mapping.update_only = !! (mapping.update_only ? false)
-			mapping.conditions ?= []
+			With this we need to:
+			 - find the fact_identifier in the facts_sessions collection
+			 - load the fact settings for the "sessions" fact (cache!)
+			 - merge the new info into the existing fact
+			 - save, ping any FKs as updated.
+			###
 
-			new Fact_deferred_Model account, mapping.fact_type, () ->
-				model = @
-				@load query, true, (err, fact = {}) =>
-					if err
-						return next err
+			# t 'start', mappings.length
 
-					if (mapping.update_only is true) and not fact
-						console.log 'Skip due to update_only', mapping.fact_type, query
-						return next()
+			parseMappings = (mapping, next) ->
+				query = _id: evaluate mapping.fact_identifier, {info: row}
 
-					@addShim (err, fact) =>
-						delete row._type
-						delete row._id if Object::toString.call(row._id) is '[object Object]'
+				if not query._id?
+					return next()
 
-						context = {info: row, fact: fact}
-						context.moment = moment
+				mapping.update_only = !! (mapping.update_only ? false)
+				mapping.conditions ?= []
 
-						evalCond = (cond, next) ->
-							Fact_deferred_Model.evaluate cond, context, next
+				new Fact_deferred_Model account, mapping.fact_type, () ->
+					model = @
+					@load query, true, (err, fact = {}) =>
+						if err
+							return next err
 
-						async.map mapping.conditions, evalCond, (err, conds) ->
-							# if an error occured, treat it as a conditions failure
-							conds.push not err
-							pass = conds.every Boolean
-							if not pass
-								if conds.filter(Boolean).length > 1
-									console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
-								return next()
+						if (mapping.update_only is true) and not fact
+							console.log 'Skip due to update_only', mapping.fact_type, query
+							return next()
 
-							parseObject mapping.fields, context, (obj) ->
-								obj._id = query._id
+						@addShim (err, fact) =>
+							delete row._type
+							delete row._id if Object::toString.call(row._id) is '[object Object]'
 
-								for key, val of obj when key.indexOf('.') >= 0
-									delete obj[key]
-									setColumn obj, key, val
+							context = {info: row, fact: fact}
+							context.moment = moment
 
-								next null, {
-									model: model
-									fact: fact or {},
-									mapping: mapping,
-									info: obj
-								}
+							evalCond = (cond, next) ->
+								Fact_deferred_Model.evaluate cond, context, next
 
-		combineMappings = (info, next) ->
-			set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
+							async.map mapping.conditions, evalCond, (err, conds) ->
+								# if an error occured, treat it as a conditions failure
+								conds.push not err
+								pass = conds.every Boolean
+								if not pass
+									if conds.filter(Boolean).length > 1
+										console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
+									return next()
 
-			# remove this stuff, it gets in the way.
-			for key of set.foreign_keys
-				info.fact.del key
+								parseObject mapping.fields, context, (obj) ->
+									obj._id = query._id
+
+									for key, val of obj when key.indexOf('.') >= 0
+										delete obj[key]
+										setColumn obj, key, val
+
+									next null, {
+										model: model
+										fact: fact or {},
+										mapping: mapping,
+										info: obj
+									}
+
+			combineMappings = (info, next) ->
+				console.log 'D0'
+
+				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
+
+				console.log 'D1'
+				# remove this stuff, it gets in the way.
+				for key of set.foreign_keys
+					info.fact.del key
 
 
-			# info.model is a Fact_Model instance. Reimport to add re-add the shim...
-			set.time = time
-			fact = mergeFacts set, info.fact.data, info.info
+				console.log 'D2'
+				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
+				set.time = time
+				fact = mergeFacts set, info.fact.data, info.info
 
-			if fact.data?.data?
-				delete fact.data
+				console.log 'D3'
+				if fact.data?.data?
+					delete fact.data
 
-			for key, mode of set.field_modes when mode is 'delete'
-				info.fact.del.call fact, key
+				console.log 'D4'
+				for key, mode of set.field_modes when mode is 'delete'
+					info.fact.del.call fact, key
 
-			fact._updated = new Date
+				fact._updated = new Date
 
-			if not fact._id
-				return next()
+				console.log 'D5'
+				if not fact._id
+					return next()
 
-			# save this into the target collection, move on
-			info.model.table.save fact, (err) ->
-				next err, {
-					fact_id: fact._id,
-					fact_type: info.mapping.fact_type,
-					version: fact._updated
-				}
-
-		async.map mappings, parseMappings, (err, result) ->
-			if err
-				return done err
-
-			job.progress 2, 3
-
-			# flatten results into single array
-			result = [].concat.apply([], result).filter Boolean
-
-			async.map result, combineMappings, (err, result) ->
-				job.progress 3, 3
-
-				# double concat...
-				result = [].concat.apply([], result)
-				result = [].concat.apply([], result)
-				result = result.filter(Boolean).filter (r) -> not Array.isArray r
-
-				for row in result when result
-					job = jobs.create 'fact_update', {
-						title: "#{row.fact_type} - #{row.fact_id}"
-						account: accountID,
-						data: row
+				console.log 'D6'
+				# save this into the target collection, move on
+				info.model.table.save fact, (err) ->
+					console.log 'D7'
+					next err, {
+						fact_id: fact._id,
+						fact_type: info.mapping.fact_type,
+						version: fact._updated
 					}
-					job.save()
 
-				done err, result
+			async.map mappings, parseMappings, (err, result) ->
+				if err
+					return done err
 
+				job.progress 2, 3
 
-module.exports.concurrency = 1
-module.exports.timeout = 1000
+				# flatten results into single array
+				result = [].concat.apply([], result).filter Boolean
+
+				async.map result, combineMappings, (err, result) ->
+					job.progress 3, 3
+
+					# double concat...
+					result = [].concat.apply([], result)
+					result = [].concat.apply([], result)
+					result = result.filter(Boolean).filter (r) -> not Array.isArray r
+
+					for row in result when result
+						job = jobs.create 'fact_update', {
+							title: "#{row.fact_type} - #{row.fact_id}"
+							account: accountID,
+							data: row
+						}
+						job.save()
+
+					done err, result

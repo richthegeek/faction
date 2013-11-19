@@ -1,161 +1,165 @@
-http = require('./http')
-q = require 'q'
-async = require 'async'
-Cache = require 'shared-cache'
+module.exports =
 
-module.exports = (job, done) ->
+	disabled: true
+	concurrency: 1
+	timeout: 10000
 
-	account = null
-	accountID = job.data.account
-	time = new Date parseInt job.created_at
-	row = job.data.data
+	setup: (context, done) ->
+		context.http = require './http'
+		context.q = require 'q'
+		context.async = require 'async'
+		context.Cache = require 'shared-cache'
+		done null, context
 
-	s = +new Date
-	t = (args...) ->
-		args.push (+new Date) - s
-		console.log.apply console.log, args
+	exec: (job, done) ->
+		account = null
+		accountID = job.data.account
+		time = new Date parseInt job.created_at
+		row = job.data.data
 
-	fns = {}
-	fns.account = (next) ->
-		loadAccount accountID, (err, acc) ->
-			account = acc
-			next err
+		s = +new Date
+		t = (args...) ->
+			args.push (+new Date) - s
+			console.log.apply console.log, args
 
-	fns.setup = (next) ->
-		account.hooks ?= Cache.create 'hooks-' + accountID, true, (key, next) ->
-			account.database.collection('hooks').find().toArray next
+		fns = {}
+		fns.account = (next) ->
+			loadAccount accountID, (err, acc) ->
+				account = acc
+				next err
 
-		account.settings ?= Cache.create 'fact-settings-' + accountID, true, (key, next) ->
-			account.database.collection('fact_settings').find().toArray next
+		fns.setup = (next) ->
+			account.hooks ?= Cache.create 'hooks-' + accountID, true, (key, next) ->
+				account.database.collection('hooks').find().toArray next
 
-		account.conditions ?= Cache.create 'fact-conditions-' + accountID, true, (key, next) ->
-			account.database.collection('conditions').find().toArray next
+			account.settings ?= Cache.create 'fact-settings-' + accountID, true, (key, next) ->
+				account.database.collection('fact_settings').find().toArray next
 
-		account.actions ?= Cache.create 'actions-' + accountID, true, (key, next) ->
-			account.database.collection('actions').find().toArray next
+			account.conditions ?= Cache.create 'fact-conditions-' + accountID, true, (key, next) ->
+				account.database.collection('conditions').find().toArray next
 
-		next()
+			account.actions ?= Cache.create 'actions-' + accountID, true, (key, next) ->
+				account.database.collection('actions').find().toArray next
 
-	fns.hooks = (next) -> account.hooks.get (e, r) -> next e, r
-	fns.settings = (next) -> account.settings.get (e, r) -> next e, r
-	fns.conditions = (next) -> account.conditions.get (e, r) -> next e, r
-	fns.actions = (next) -> account.actions.get (e, r) -> next e, r
+			next()
 
-	fns.fact = (next) ->
-		new Fact_deferred_Model account, row.fact_type, () ->
-			model = @
-			@load {_id: row.fact_id}, true, (err, fact = {}) ->
-				if err or not fact._id
-					return next err or 'Bad ID'
+		fns.hooks = (next) -> account.hooks.get (e, r) -> next e, r
+		fns.settings = (next) -> account.settings.get (e, r) -> next e, r
+		fns.conditions = (next) -> account.conditions.get (e, r) -> next e, r
+		fns.actions = (next) -> account.actions.get (e, r) -> next e, r
 
-				# if the fact was updated, bail early - a later fact update should pick it up
-				if row.version and fact._updated.toJSON() isnt row.version
-					job.log "Skipped due to invalid version"
-					return next "Invalid version"
+		fns.fact = (next) ->
+			new Fact_deferred_Model account, row.fact_type, () ->
+				model = @
+				@load {_id: row.fact_id}, true, (err, fact = {}) ->
+					if err or not fact._id
+						return next err or 'Bad ID'
 
-				# @addShim () =>
-				next null, model
+					# if the fact was updated, bail early - a later fact update should pick it up
+					if row.version and fact._updated.toJSON() isnt row.version
+						job.log "Skipped due to invalid version"
+						return next "Invalid version"
 
-	async.series fns, (err, results) =>
-		# need to do the following:
-		#  - evaluate fact fields.
-		#  - evaluate condition fields
-		#  - send hooks.
-		filter = (obj) -> row.fact_type is obj.fact_type
+					# @addShim () =>
+					next null, model
 
-		hooks      = results.hooks.filter filter
-		conditions = results.conditions.filter filter
-		actions    = results.actions.filter filter
-		settings   = results.settings.filter((setting) -> setting._id is row.fact_type).pop() or {}
+		async.series fns, (err, results) =>
+			# need to do the following:
+			#  - evaluate fact fields.
+			#  - evaluate condition fields
+			#  - send hooks.
+			filter = (obj) -> row.fact_type is obj.fact_type
 
-		settings.field_modes ?= {}
-		settings.foreign_keys ?= {}
+			hooks      = results.hooks.filter filter
+			conditions = results.conditions.filter filter
+			actions    = results.actions.filter filter
+			settings   = results.settings.filter((setting) -> setting._id is row.fact_type).pop() or {}
 
-		fact = results.fact
+			settings.field_modes ?= {}
+			settings.foreign_keys ?= {}
 
-		if err
-			# supress this "error"
-			if err is 'Invalid version'
-				return done()
-			return done err
+			fact = results.fact
 
-		if not fact?.data?
-			return done 'Invalid fact'
+			if err
+				# supress this "error"
+				if err is 'Invalid version'
+					return done()
+				return done err
 
-		context =
-			http: http
-			q: q
-			fact: fact.data,
-			load: (type, id) ->
-				defer = require('q').defer()
-				new Fact_deferred_Model account, type, () ->
-					@load {_id: id}, (err, found) ->
-						if err or not found
-							return defer.reject err or 'Not found'
-						defer.resolve @data
-				return defer.promise
+			if not fact?.data?
+				return done 'Invalid fact'
 
-		# evaluate fact data...
-		evals = ([key, props] for key, props of settings.field_modes when props.eval)
-		evaluate = (arr, next) ->
-			[key, props] = arr
-			# evaluate the value
+			context =
+				http: http
+				q: q
+				fact: fact.data,
+				load: (type, id) ->
+					defer = q.defer()
+					new Fact_deferred_Model account, type, () ->
+						@load {_id: id}, (err, found) ->
+							if err or not found
+								return defer.reject err or 'Not found'
+							defer.resolve @data
+					return defer.promise
 
-			# context = getContext fact
-			fact.withMap [], props.map, context, (err, map) =>
-				map[k] = v for k, v of context
-				fact.data.eval props.eval, map, (err, result) =>
-					result = result ? props.default ? null
+			# evaluate fact data...
+			evals = ([key, props] for key, props of settings.field_modes when props.eval)
+			evaluate = (arr, next) ->
+				[key, props] = arr
+				# evaluate the value
 
-					fact.data.set.call fact.data.data, key, result
-					next null, {key: key, value: result}
+				# context = getContext fact
+				fact.withMap [], props.map, context, (err, map) =>
+					map[k] = v for k, v of context
+					fact.data.eval props.eval, map, (err, result) =>
+						result = result ? props.default ? null
 
-		doConditions = (condition, next) ->
-			fact.evaluateCondition condition, context, (err, result) ->
-				result = not err and result.every Boolean
-				next null, {key: '_conditions.' + condition.condition_id, value: result}
+						fact.data.set.call fact.data.data, key, result
+						next null, {key: key, value: result}
 
-		async.mapSeries evals, evaluate, (err, cols1) ->
-			async.mapSeries conditions, doConditions, (err, cols2) ->
-				columns = cols1.concat(cols2).filter Boolean
+			doConditions = (condition, next) ->
+				fact.evaluateCondition condition, context, (err, result) ->
+					result = not err and result.every Boolean
+					next null, {key: '_conditions.' + condition.condition_id, value: result}
 
-				# if we evaluated anytihng, save the fact.
-				time = new Date
+			async.mapSeries evals, evaluate, (err, cols1) ->
+				async.mapSeries conditions, doConditions, (err, cols2) ->
+					columns = cols1.concat(cols2).filter Boolean
 
-				if columns.length > 0
-					set = {}
-					set[col.key] = col.value for col in columns
-					set._updated = time
+					# if we evaluated anytihng, save the fact.
+					time = new Date
 
-					fact.table.update {_id: fact.data._id}, {$set: set}, -> null
+					if columns.length > 0
+						set = {}
+						set[col.key] = col.value for col in columns
+						set._updated = time
 
-				# send hooks...
-				list = hooks.map (hook) ->
-					jobs.create 'hook_send', {
-						title: "#{hook.hook_id} - #{row.fact_type} - #{row.fact_id}"
-						account: accountID,
-						data:
-							hook_id: hook.hook_id,
-							fact_type: hook.fact_type
-							fact_id: fact.data._id
-							version: time
-					}
+						fact.table.update {_id: fact.data._id}, {$set: set}, -> null
 
-				# initiate any actions
-				list = list.concat actions.map (action) ->
-					job = jobs.create 'perform_action', {
-						title: "#{action.action_id} - #{row.fact_type} - #{row.fact_id}"
-						account: accountID,
-						data:
-							action_id: action.action_id,
-							fact_type: action.fact_type,
-							fact_id: fact.data._id
-							version: time
-							stage: -1
-					}
+					# send hooks...
+					list = hooks.map (hook) ->
+						jobs.create 'hook_send', {
+							title: "#{hook.hook_id} - #{row.fact_type} - #{row.fact_id}"
+							account: accountID,
+							data:
+								hook_id: hook.hook_id,
+								fact_type: hook.fact_type
+								fact_id: fact.data._id
+								version: time
+						}
 
-				async.each list, ((job, next) -> job.save(next)), (err) ->
-					done null, columns
+					# initiate any actions
+					list = list.concat actions.map (action) ->
+						job = jobs.create 'perform_action', {
+							title: "#{action.action_id} - #{row.fact_type} - #{row.fact_id}"
+							account: accountID,
+							data:
+								action_id: action.action_id,
+								fact_type: action.fact_type,
+								fact_id: fact.data._id
+								version: time
+								stage: -1
+						}
 
-module.exports.concurrency = 1
-module.exports.timeout = 10000
+					async.each list, ((job, next) -> job.save(next)), (err) ->
+						done null, columns
