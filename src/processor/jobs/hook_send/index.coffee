@@ -59,7 +59,7 @@ module.exports =
 				console.log 'No fact?', accountID, typeof row.fact_id, row.fact_id, row.fact_type
 				return done 'Unknown fact'
 
-			console.log 'H', 2
+			console.log 'H', 2, hook.with, hook.map
 			try
 				results.fact.withMap hook.with, hook.map, {fact: results.fact}, (err, result) ->
 					console.log 'H', 3, err
