@@ -15,6 +15,11 @@ module.exports =
 		time = new Date parseInt job.created_at
 		row = job.data.data
 
+		debugMode = accountID is 'e55f10efa848b3d3' and row.fact_id is 'richthegeek@gmail.com'
+		debug = () ->
+			if debugMode
+				console.log.apply console.log, arguments
+
 		s = +new Date
 		t = (args...) ->
 			args.push (+new Date) - s
@@ -91,7 +96,7 @@ module.exports =
 				http: http
 				q: q
 				fact: fact.data,
-				debug: () -> console.log.apply console.log arguments
+				debug: debug
 				load: (type, id) ->
 					defer = q.defer()
 					new Fact_deferred_Model account, type, () ->
@@ -112,8 +117,7 @@ module.exports =
 					map[k] = v for k, v of context
 					fact.data.eval props.eval, map, (err, result) =>
 
-						if fact.data._id is '1'
-							console.log 'EVAL', props.eval, err, result
+						debug 'EVAL', props.eval, err, result
 
 						result = result ? props.default ? null
 
