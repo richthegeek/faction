@@ -631,6 +631,7 @@ class Copernica_Subprofile extends Copernica_Profile
 ###
 module.exports =
 	'setup': ( options, callback ) ->
+		return callback()
 		async.waterfall [
 			connectToCopernica = ( next ) ->
 				new Copernica_Base options, next
@@ -665,6 +666,7 @@ module.exports =
 		], callback
 
 	'exec': ( hook, data, callback ) ->
+		return callback()
 		counts = []
 		_log_current_profile = 'N/A'
 		log = ( ) -> console.log.apply console, ["\tCopernica (#{_log_current_profile}):"].concat Array.prototype.slice.apply arguments
