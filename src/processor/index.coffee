@@ -73,8 +73,13 @@ processJobs = (type, ready) ->
 			while str.length < size
 				str = " " + str
 			return str
-		if times.length > 0
 
+		if times.length is 0 and this_processing is 0
+			if not idle
+				console.log "`", pad(type, 15), 'idle'
+			idle = true
+
+		if times.length > 0
 			sum = pad times.reduce (a, b) -> a + b
 			max = pad times.reduce (a, b) -> Math.max(a, b)
 			min = pad times.reduce (a, b) -> Math.min(a, b)
@@ -90,13 +95,10 @@ processJobs = (type, ready) ->
 			console.log "+", pad(type, 15), pad(times.length), pad("#{percent}%"), [mean, min, max].join(" / ")
 			idle = false
 			times = []
+
 		if this_processing > 0
 			console.log "#", pad(type, 15), "working on #{this_processing} long jobs"
 
-		if times.length is 0 and this_processing is 0
-			if not idle
-				console.log "`", pad(type, 15), 'idle'
-			idle = true
 	), (config.kue.interval * 1000)
 
 	jobs.process type, multi, (job, complete) ->
