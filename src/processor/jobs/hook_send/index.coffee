@@ -14,6 +14,8 @@ module.exports =
 		time = new Date parseInt job.created_at
 		row = job.data.data
 
+		console.log 'HOOK', row.fact_id
+
 		fns = {}
 		fns.account = (next) ->
 			loadAccount accountID, (err, acc) ->
