@@ -15,7 +15,7 @@ module.exports =
 		time = new Date parseInt job.created_at
 		row = job.data.data
 
-		debugMode = accountID is 'e55f10efa848b3d3' and row.fact_id is 'richthegeek@gmail.com'
+		debugMode = false
 		debug = () ->
 			if debugMode
 				console.log.apply console.log, arguments
