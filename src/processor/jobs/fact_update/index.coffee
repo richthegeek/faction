@@ -87,6 +87,8 @@ module.exports =
 			if not fact?.data?
 				return done 'Invalid fact'
 
+			console.log 'Fact Update', settings
+
 			context =
 				http: http
 				q: q
