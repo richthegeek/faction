@@ -132,15 +132,14 @@ module.exports =
 					# if we evaluated anytihng, save the fact.
 					time = new Date
 
-					if fact.data._id is '1'
-						console.log 'Updated', columns
-
 					if columns.length > 0
 						set = {}
 						set[col.key] = col.value for col in columns
 						set._updated = time
 
-						fact.table.update {_id: fact.data._id}, {$set: set}, -> null
+						fact.table.update {_id: fact.data._id}, {$set: set}, (err) ->
+							if fact.data._id is '1'
+								console.log 'Updated', set, arguments
 
 					# send hooks...
 					list = hooks.map (hook) ->
