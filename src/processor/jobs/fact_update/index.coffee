@@ -142,8 +142,7 @@ module.exports =
 						set._updated = time
 
 						fact.table.update {_id: fact.data._id}, {$set: set}, (err) ->
-							if fact.data._id is '1'
-								console.log 'Updated', fact.table.db.databaseName, fact.table.collectionName, arguments
+							debug 'Updated', fact.table.db.databaseName, fact.table.collectionName, arguments
 
 					# send hooks...
 					list = hooks.map (hook) ->
