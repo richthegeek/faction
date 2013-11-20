@@ -145,6 +145,9 @@ module.exports = class Fact_deferred_Model extends Model
 
 
 	withMap: (_with, map, context, shim, callback) ->
+		i = 0
+		log = () => console.log 'withMap', ++i, @data._id, arguments
+
 		args = Array::slice.call(arguments, 2)
 		callback = args.pop()
 		shim = args.pop() or true
@@ -162,6 +165,7 @@ module.exports = class Fact_deferred_Model extends Model
 			@data.eval "this.#{part}", context, (err, result) ->
 				next err, result
 
+		log 'start'
 		async.map _with, get, () =>
 
 			if not map
@@ -170,7 +174,9 @@ module.exports = class Fact_deferred_Model extends Model
 			# next = (cb) -> cb()
 			# next = @addShim if shim
 
+			log 'postmap'
 			@addShim () =>
+				log 'postshim'
 				obj = {}
 				get = (arg, next) =>
 					[key, path] = arg
@@ -187,7 +193,9 @@ module.exports = class Fact_deferred_Model extends Model
 				if maps.length > 0
 					maps.unshift ['_id', 'this._id']
 
+					log 'pre mapSeries'
 					async.mapSeries maps, get, () =>
+						console.log 'post mapSeries'
 						callback null, obj
 				else
 					callback null, @data
