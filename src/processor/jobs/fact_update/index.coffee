@@ -58,6 +58,8 @@ module.exports =
 					if err or not fact._id
 						return next err or 'Bad ID'
 
+					debugMode = debugMode or fact.debug is true
+
 					# if the fact was updated, bail early - a later fact update should pick it up
 					if row.version and fact._updated.toJSON() isnt row.version
 						job.log "Skipped due to invalid version"
@@ -114,9 +116,13 @@ module.exports =
 
 				# context = getContext fact
 				fact.withMap [], props.map, context, (err, map) =>
+					debug 'Preval', map
 					for k, v of context
 						map[k] = map[k] ? v
 					fact.data.eval props.eval, map, (err, result) =>
+
+						debug 'Eval', props.eval, result
+
 						result = result ? props.default ? null
 
 						fact.data.set.call fact.data.data, key, result
