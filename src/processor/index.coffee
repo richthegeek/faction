@@ -132,7 +132,7 @@ processJobs = (type, ready) ->
 
 			if err
 				console.error '!', type, job.data.title, err
-				job.log err
+				job.log (err.message or err).toString()
 
 			complete()
 
