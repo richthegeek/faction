@@ -165,7 +165,7 @@ module.exports = class Fact_deferred_Model extends Model
 			start = +new Date
 			console.log ' > get', part
 			@data.eval "this.#{part}", context, (err, result) ->
-				console.log ' < got', part, err, result?, (+new Date) - start
+				console.log ' < got', part, err, result?, typeof result, (+new Date) - start
 				next err, result
 
 		log 'start', _with
