@@ -1,9 +1,6 @@
 request = require 'request'
 module.exports =
 	exec: (hook, fact, cb) ->
-
-		console.log fact
-
 		options =
 			method: hook.options.method or 'POST'
 			uri: "http://t.trakapo.com:2474/#{hook.options.subtype}/exec"
