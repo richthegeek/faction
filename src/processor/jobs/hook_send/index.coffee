@@ -5,7 +5,7 @@ Cache = require 'shared-cache'
 
 module.exports =
 
-	disabled: true
+	disabled: false
 	concurrency: 1
 
 	exec: (job, done) ->
