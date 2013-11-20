@@ -112,6 +112,8 @@ module.exports =
 					fact.data.eval props.eval, map, (err, result) =>
 						result = result ? props.default ? null
 
+						console.log '\teval', props.eval, result
+
 						fact.data.set.call fact.data.data, key, result
 						next null, {key: key, value: result}
 
