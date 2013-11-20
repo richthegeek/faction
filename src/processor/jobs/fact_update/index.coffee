@@ -58,7 +58,7 @@ module.exports =
 					if err or not fact._id
 						return next err or 'Bad ID'
 
-					debugMode = debugMode or fact.debug is true
+					debugMode = debugMode or fact.data.debug is true
 
 					# if the fact was updated, bail early - a later fact update should pick it up
 					if row.version and fact._updated.toJSON() isnt row.version
