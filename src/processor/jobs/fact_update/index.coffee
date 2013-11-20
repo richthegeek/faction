@@ -115,7 +115,7 @@ module.exports =
 				# context = getContext fact
 				fact.withMap [], props.map, context, (err, map) =>
 					debug 'Premap', map
-					map[k] = v for k, v of context
+					map[k] ?= v for k, v of context
 					fact.data.eval props.eval, map, (err, result) =>
 
 						debug 'EVAL', props.eval, err, result
