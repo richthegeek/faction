@@ -14,7 +14,7 @@ module.exports =
 		time = new Date parseInt job.created_at
 		row = job.data.data
 
-		console.log 'HOOK', row
+		console.log 'HOOK', row.fact_id
 
 		fns = {}
 		fns.account = (next) ->
@@ -46,7 +46,7 @@ module.exports =
 						next null, model
 
 		async.series fns, (err, results) =>
-			console.log 'H', 1, err
+			# console.log 'H', 1, err
 			if err
 				return done err
 
@@ -59,10 +59,10 @@ module.exports =
 				console.log 'No fact?', accountID, typeof row.fact_id, row.fact_id, row.fact_type
 				return done 'Unknown fact'
 
-			console.log 'H', 2
+			# console.log 'H', 2
 			try
 				results.fact.withMap hook.with, hook.map, {fact: results.fact}, (err, result) ->
-					console.log 'H', 3, err
+					# console.log 'H', 3, err
 					# double-JSON to strip getters at this stage
 					fact = JSON.parse JSON.stringify result
 
@@ -84,9 +84,9 @@ module.exports =
 					hookService = require file
 
 
-					console.log 'H', 4, hookService?
+					# console.log 'H', 4, hookService?
 					hookService.exec hook, fact, (err, result) ->
-						console.log 'H', 5, err, result
+						# console.log 'H', 5, err, result
 						if err
 							console.log JSON.stringify err
 							return done err
