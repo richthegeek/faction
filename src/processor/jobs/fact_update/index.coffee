@@ -114,14 +114,9 @@ module.exports =
 
 				# context = getContext fact
 				fact.withMap [], props.map, context, (err, map) =>
-					debug 'Premap', map
 					for k, v of context
 						map[k] = map[k] ? v
 					fact.data.eval props.eval, map, (err, result) =>
-
-						debug 'EVAL', props.eval, err, result
-						debug 'score', map.score
-
 						result = result ? props.default ? null
 
 						fact.data.set.call fact.data.data, key, result
@@ -145,7 +140,8 @@ module.exports =
 						set._updated = time
 
 						fact.table.update {_id: fact.data._id}, {$set: set}, (err) ->
-							debug 'Updated', fact.table.db.databaseName, fact.table.collectionName, arguments
+							if err
+								console.error 'Fact Update write failure', fact.table.db.databaseName, fact.table.collectionName, fact.data._id, arguments
 
 					# send hooks...
 					list = hooks.map (hook) ->
