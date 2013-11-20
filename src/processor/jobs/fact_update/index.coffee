@@ -128,7 +128,8 @@ module.exports =
 					# if we evaluated anytihng, save the fact.
 					time = new Date
 
-					if fact._id is '1'
+					console.log fact.data._id, typeof fact.data._id
+					if fact.data._id is '1'
 						console.log 'Updated', columns
 
 					if columns.length > 0
