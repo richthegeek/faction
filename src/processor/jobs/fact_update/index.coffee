@@ -91,6 +91,7 @@ module.exports =
 				http: http
 				q: q
 				fact: fact.data,
+				debug: () -> console.log.apply console.log arguments
 				load: (type, id) ->
 					defer = q.defer()
 					new Fact_deferred_Model account, type, () ->
