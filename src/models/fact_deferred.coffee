@@ -195,7 +195,7 @@ module.exports = class Fact_deferred_Model extends Model
 
 					log 'pre mapSeries'
 					async.mapSeries maps, get, () =>
-						console.log 'post mapSeries'
+						log 'post mapSeries'
 						callback null, obj
 				else
 					callback null, @data
