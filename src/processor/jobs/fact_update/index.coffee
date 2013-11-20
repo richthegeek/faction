@@ -111,6 +111,10 @@ module.exports =
 				fact.withMap [], props.map, context, (err, map) =>
 					map[k] = v for k, v of context
 					fact.data.eval props.eval, map, (err, result) =>
+
+						if fact.data._id is '1'
+							console.log 'EVAL', props.eval, err, result
+
 						result = result ? props.default ? null
 
 						fact.data.set.call fact.data.data, key, result
@@ -128,7 +132,6 @@ module.exports =
 					# if we evaluated anytihng, save the fact.
 					time = new Date
 
-					console.log fact.data._id, typeof fact.data._id
 					if fact.data._id is '1'
 						console.log 'Updated', columns
 
