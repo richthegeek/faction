@@ -59,7 +59,7 @@ module.exports =
 				return done 'Unknown fact'
 
 			try
-				results.fact.withMap hook.with, hook.map, false, (err, result) ->
+				results.fact.withMap hook.with, hook.map, {fact: fact}, (err, result) ->
 					# double-JSON to strip getters at this stage
 					fact = JSON.parse JSON.stringify result
 
