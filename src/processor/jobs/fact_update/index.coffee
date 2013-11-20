@@ -87,8 +87,6 @@ module.exports =
 			if not fact?.data?
 				return done 'Invalid fact'
 
-			console.log 'Fact Update', settings
-
 			context =
 				http: http
 				q: q
@@ -113,8 +111,6 @@ module.exports =
 					map[k] = v for k, v of context
 					fact.data.eval props.eval, map, (err, result) =>
 						result = result ? props.default ? null
-
-						console.log '\teval', props.eval, result
 
 						fact.data.set.call fact.data.data, key, result
 						next null, {key: key, value: result}
