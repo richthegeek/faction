@@ -47,6 +47,11 @@ module.exports = (settings, old_fact, mid_fact) ->
 		new_val = n_f.get path
 		old_val = o_f.get sub_path
 
+		if key.charAt(0) not in ['$', '_']
+			return
+
+		console.log key, sub_path, old_val, new_val
+
 		if key in ['$inc', '_inc']
 			inc_by = Number(new_val) | 0
 			old_val = old_val | 0
