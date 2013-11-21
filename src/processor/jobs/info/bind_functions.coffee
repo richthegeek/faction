@@ -118,7 +118,7 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 		if type in ['Object', 'Array']
-			@update bind_iterable value
+			set.push {path: this.path, value: bind_iterable value}
 
 	for row in set
 		traverse(data).set row.path, row.value

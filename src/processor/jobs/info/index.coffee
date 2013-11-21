@@ -113,7 +113,7 @@ module.exports =
 					query = _id: evaluate mapping.fact_identifier, {info: row}
 
 					if mapping.debug
-						console.log 'Query', row.action.referrer.host, query
+						console.log 'Query', row.action.referrer, row.action.referrer.href, query
 
 					if not query._id?
 						return next()
