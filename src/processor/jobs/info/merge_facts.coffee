@@ -52,8 +52,7 @@ module.exports = (settings, old_fact, mid_fact) ->
 		new_val = new_val[key] or new_val
 		old_val = o_f.get sub_path
 
-
-		console.log key, sub_path, old_val, new_val
+		# console.log key, sub_path, old_val, new_val
 
 		if key in ['$inc', '%inc']
 			inc_by = Number(new_val) | 0
