@@ -108,6 +108,8 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
+		console.log 'traverse', type, value
+
 		if type is 'Array'
 			@update bind_array value
 
