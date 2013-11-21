@@ -105,20 +105,23 @@ module.exports = (data) ->
 				urlObj.toJSON = -> @href
 				return urlObj
 
-	traverse(data).forEach (value) ->
-		type = Object::toString.call(value).slice(8, -1)
+		traverse(data).forEach (value) ->
+			try
+				type = Object::toString.call(value).slice(8, -1)
 
-		console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
+				console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
 
-		if type is 'Array'
-			value = bind_array value
+				if type is 'Array'
+					value = bind_array value
 
-		if type in ['Object', 'Array']
-			value = bind_iterable value
+				if type in ['Object', 'Array']
+					value = bind_iterable value
 
-		if type is 'String'
-			value = bind_string value
+				if type is 'String'
+					value = bind_string value
 
-		@update value
+				@update value
+			catch e
+				console.log 'An error occured', e
 
 	return data
