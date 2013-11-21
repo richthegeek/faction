@@ -111,6 +111,9 @@ module.exports =
 			parseMappings = (mapping, next) ->
 				query = _id: evaluate mapping.fact_identifier, {info: row}
 
+				if mapping.debug
+					console.log 'Query', query
+
 				if not query._id?
 					return next()
 
