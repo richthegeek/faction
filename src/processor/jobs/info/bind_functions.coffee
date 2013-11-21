@@ -118,14 +118,10 @@ module.exports = (data) ->
 			if value.indexOf('/') >= 0
 				urlObj = url.parse value, true
 				if urlObj.hostname
-					console.log 'url', value
 					urlObj.toString = -> @href
 					urlObj.toJSON = -> @href
 					urlObj.isURL = true
 
 					@update urlObj, true
-
-	catch e
-		console.log 'Something terrible happened', JSON.stringify(e)
 
 	return data
