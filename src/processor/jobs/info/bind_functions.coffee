@@ -103,20 +103,25 @@ module.exports = (data) ->
 			if urlObj.hostname
 				urlObj.toString = -> @href
 				urlObj.toJSON = -> @href
+				urlObj.isURL = true
 				return urlObj
 
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
+		# skip URL on second pass
+		if this.parent.isURL
+			return
+
 		console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
+
+		if type is 'Array'
+			value = bind_array value
 
 		if type is 'String'
 			@update bind_string value
 
 		return
-
-		if type is 'Array'
-			value = bind_array value
 
 		if type in ['Object', 'Array']
 			value = bind_iterable value
