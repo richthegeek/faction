@@ -112,16 +112,16 @@ module.exports = (data) ->
 			acc.push {path: this.path, value: x}
 		return acc
 
-	d = traverse(data)
-	strings = d.reduce fn, []
-	strings.forEach (row) ->
-		if typeof value is 'string' and value.indexOf('/') >= 0
-			console.log 'traverse', value
-			urlObj = url.parse value, true
-			if urlObj.hostname
-				urlObj.toString = -> @href
-				urlObj.toJSON = -> @href
-				urlObj.isURL = true
-				d.set row.path, urlObj
+	# d = traverse(data)
+	# strings = d.reduce fn, []
+	# strings.forEach (row) ->
+	# 	if typeof value is 'string' and value.indexOf('/') >= 0
+	# 		console.log 'traverse', value
+	# 		urlObj = url.parse value, true
+	# 		if urlObj.hostname
+	# 			urlObj.toString = -> @href
+	# 			urlObj.toJSON = -> @href
+	# 			urlObj.isURL = true
+	# 			d.set row.path, urlObj
 
 	return data
