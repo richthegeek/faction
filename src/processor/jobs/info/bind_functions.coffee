@@ -110,6 +110,9 @@ module.exports = (data) ->
 
 		console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
 
+		if type is 'String'
+			@update bind_string value
+
 		return
 
 		if type is 'Array'
@@ -118,8 +121,6 @@ module.exports = (data) ->
 		if type in ['Object', 'Array']
 			value = bind_iterable value
 
-		if type is 'String'
-			value = bind_string value
 
 		@update value
 
