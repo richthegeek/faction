@@ -5,6 +5,9 @@ url = require 'url'
 
 module.exports = (data) ->
 
+	if not traverse(data)?.reduce?
+		return data
+
 	bind_array = (value) ->
 		if (1 for item in value when item._value? and item._date?).length > 0
 			value.over = (period, time) ->
