@@ -109,8 +109,8 @@ module.exports = (data) ->
 
 	try
 		fn = (acc, x) ->
-			if @isLeaf and typeof x is 'string'
-				acc.push {path: this.path, value: x}
+			# if @isLeaf and typeof x is 'string'
+				# acc.push {path: this.path, value: x}
 			return acc
 
 		d = traverse(data)
