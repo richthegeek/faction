@@ -107,25 +107,28 @@ module.exports = (data) ->
 		if type in ['Object', 'Array']
 			@update bind_iterable value
 
-	fn = (acc, x) ->
-		if @isLeaf and typeof x is 'string'
-			acc.push {path: this.path, value: x}
-		return acc
+	try
+		fn = (acc, x) ->
+			if @isLeaf and typeof x is 'string'
+				acc.push {path: this.path, value: x}
+			return acc
 
-	d = traverse(data)
-	# strings = d.reduce fn, []
-	# strings.forEach (row) ->
-	# 	path = row.path
-	# 	value = row.value
+		d = traverse(data)
+		# strings = d.reduce fn, []
+		# strings.forEach (row) ->
+		# 	path = row.path
+		# 	value = row.value
 
-	# 	if typeof value is 'string' and value.indexOf('/') >= 0
-	# 		console.log 'traverse', value
-	# 		urlObj = url.parse value, true
-	# 		if urlObj.hostname
-	# 			urlObj.toString = -> @href
-	# 			urlObj.toJSON = -> @href
-	# 			urlObj.isURL = true
+		# 	if typeof value is 'string' and value.indexOf('/') >= 0
+		# 		console.log 'traverse', value
+		# 		urlObj = url.parse value, true
+		# 		if urlObj.hostname
+		# 			urlObj.toString = -> @href
+		# 			urlObj.toJSON = -> @href
+		# 			urlObj.isURL = true
 
-	# 			d.set path, urlObj
+		# 			d.set path, urlObj
+	catch e
+		console.lgo 'Something terrible happened', e
 
 	return data
