@@ -149,6 +149,9 @@ module.exports =
 								parseObject mapping.fields, context, (obj) ->
 									obj._id = query._id
 
+									if mapping.debug
+										console.log 'Mapped', mapping, obj
+
 									for key, val of obj when key.indexOf('.') >= 0
 										delete obj[key]
 										setColumn obj, key, val
