@@ -49,6 +49,7 @@ module.exports = (settings, old_fact, mid_fact) ->
 
 		sub_path = path.slice 0, -1
 		new_val = n_f.get path
+		new_val = new_val[key] or new_val
 		old_val = o_f.get sub_path
 
 
