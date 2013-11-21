@@ -129,6 +129,6 @@ module.exports = (data) ->
 
 		# 			d.set path, urlObj
 	catch e
-		console.log 'Something terrible happened', e
+		console.log 'Something terrible happened', e.message, e.stack, e
 
 	return data
