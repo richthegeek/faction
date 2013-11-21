@@ -109,7 +109,8 @@ module.exports = (data) ->
 
 	try
 		fn = (acc, x) ->
-			# if @isLeaf and typeof x is 'string'
+			if @isLeaf # and typeof x is 'string'
+				null
 				# acc.push {path: this.path, value: x}
 			return acc
 
