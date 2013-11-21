@@ -96,9 +96,7 @@ module.exports = (data) ->
 
 	bind_string = (value) ->
 		# parse urls
-		console.log 'bind string', value
 		if value.indexOf('/') >= 0
-			console.log 'Adding URL to', value
 			urlObj = url.parse value, true
 			if urlObj.hostname
 				urlObj.toString = -> @href
@@ -111,21 +109,16 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
-		console.log 'traverse', type
-
 		if type is 'Array'
-			value = bind_array value
+			@update bind_array value
 
 		if type is 'String'
 			set.push {path: this.path, value: bind_string value}
 
-		return
-
+	traverse(data).forEach (value) ->
+		type = Object::toString.call(value).slice(8, -1)
 		if type in ['Object', 'Array']
-			value = bind_iterable value
-
-
-		@update value
+			@update bind_iterable value
 
 	for row in set
 		traverse(data).set row.path, row.value
