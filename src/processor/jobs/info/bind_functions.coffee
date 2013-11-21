@@ -97,6 +97,7 @@ module.exports = (data) ->
 	bind_string = (value) ->
 		# parse urls
 		if value.indexOf('/') >= 0
+			console.log 'Adding URL to', value
 			urlObj = url.parse value, true
 			if urlObj.hostname
 				urlObj.toString = -> @href
