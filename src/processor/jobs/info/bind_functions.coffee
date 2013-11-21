@@ -111,7 +111,7 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
-		console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
+		console.log 'traverse', type
 
 		if type is 'Array'
 			value = bind_array value
