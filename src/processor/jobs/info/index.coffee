@@ -109,62 +109,63 @@ module.exports =
 			# t 'start', mappings.length
 
 			parseMappings = (mapping, next) ->
-				query = _id: evaluate mapping.fact_identifier, {info: row}
+				addShim row, (err, row) ->
+					query = _id: evaluate mapping.fact_identifier, {info: row}
 
-				if mapping.debug
-					console.log 'Query', mapping.fact_identifier, row, query
+					if mapping.debug
+						console.log 'Query', mapping.fact_identifier, row, query
 
-				if not query._id?
-					return next()
+					if not query._id?
+						return next()
 
-				mapping.update_only = !! (mapping.update_only ? false)
-				mapping.conditions ?= []
+					mapping.update_only = !! (mapping.update_only ? false)
+					mapping.conditions ?= []
 
-				new Fact_deferred_Model account, mapping.fact_type, () ->
-					model = @
-					@load query, true, (err, fact = {}) =>
-						if err
-							return next err
+					new Fact_deferred_Model account, mapping.fact_type, () ->
+						model = @
+						@load query, true, (err, fact = {}) =>
+							if err
+								return next err
 
-						if (mapping.update_only is true) and not fact
-							console.log 'Skip due to update_only', mapping.fact_type, query
-							return next()
+							if (mapping.update_only is true) and not fact
+								console.log 'Skip due to update_only', mapping.fact_type, query
+								return next()
 
-						@addShim (err, fact) =>
-							delete row._type
-							delete row._id if Object::toString.call(row._id) is '[object Object]'
+							@addShim (err, fact) =>
+								delete row._type
+								delete row._id if Object::toString.call(row._id) is '[object Object]'
 
-							context = {info: row, fact: fact}
-							context.moment = moment
+								context = {info: row, fact: fact}
+								context.moment = moment
 
-							evalCond = (cond, next) ->
-								Fact_deferred_Model.evaluate cond, context, next
+								evalCond = (cond, next) ->
+									Fact_deferred_Model.evaluate cond, context, next
 
-							async.map mapping.conditions, evalCond, (err, conds) ->
-								# if an error occured, treat it as a conditions failure
-								conds.push not err
-								pass = conds.every Boolean
-								if not pass
-									if conds.filter(Boolean).length > 1
-										console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
-									return next()
+								async.map mapping.conditions, evalCond, (err, conds) ->
+									# if an error occured, treat it as a conditions failure
+									conds.push not err
+									pass = conds.every Boolean
+									if not pass
+										if conds.filter(Boolean).length > 1
+											console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
+										return next()
 
-								parseObject mapping.fields, context, (obj) ->
-									obj._id = query._id
+									parseObject mapping.fields, context, (obj) ->
+										obj._id = query._id
 
-									if mapping.debug
-										console.log 'Mapped', mapping, obj
+										if mapping.debug
+											console.log 'Mapped', mapping, obj
 
-									for key, val of obj when key.indexOf('.') >= 0
-										delete obj[key]
-										setColumn obj, key, val
+										for key, val of obj when key.indexOf('.') >= 0
+											delete obj[key]
+											setColumn obj, key, val
 
-									next null, {
-										model: model
-										fact: fact or {},
-										mapping: mapping,
-										info: obj
-									}
+										next null, {
+											model: model
+											fact: fact or {},
+											mapping: mapping,
+											info: obj
+										}
 
 			combineMappings = (info, next) ->
 				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
