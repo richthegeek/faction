@@ -97,7 +97,7 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
-		if value and value.isURL?
+		if (value and value.isURL?) or (@parent and @parent.node.isURL?)
 			return
 
 		if type is 'Array'
@@ -120,6 +120,7 @@ module.exports = (data) ->
 			if urlObj.hostname
 				urlObj.toString = -> @href
 				urlObj.toJSON = -> @href
+				urlObj.isURL = true
 				d.set row.path, urlObj
 
 	return data
