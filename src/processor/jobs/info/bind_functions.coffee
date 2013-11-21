@@ -112,7 +112,7 @@ module.exports = (data) ->
 		return acc
 
 	d = traverse(data)
-	strings = d.reduce acc, []
+	strings = d.reduce fn, []
 	strings.forEach (row) ->
 		if typeof value is 'string' and value.indexOf('/') >= 0
 			console.log 'traverse', value
