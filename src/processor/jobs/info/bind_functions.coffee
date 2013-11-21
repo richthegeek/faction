@@ -106,6 +106,9 @@ module.exports = (data) ->
 	set = []
 	traverse(data).forEach (value) ->
 		# parse urls
+		if value and value.hostname? and value.path?
+			return
+
 		if typeof value is 'string' and value.indexOf('/') >= 0
 			console.log 'traverse', value
 			urlObj = url.parse value, true
