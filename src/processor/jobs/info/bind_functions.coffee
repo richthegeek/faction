@@ -107,13 +107,13 @@ module.exports = (data) ->
 		if type in ['Object', 'Array']
 			@update bind_iterable value
 
-	fn = (acc, x) ->
-		if @isLeaf and typeof x is 'string'
-			acc.push {path: this.path, value: x}
-		return acc
+	# fn = (acc, x) ->
+	# 	if @isLeaf and typeof x is 'string'
+	# 		acc.push {path: this.path, value: x}
+	# 	return acc
 
-	d = traverse(data)
-	strings = d.reduce fn, []
+	# d = traverse(data)
+	# strings = d.reduce fn, []
 	# strings.forEach (row) ->
 	# 	path = row.path
 	# 	value = row.value
