@@ -103,22 +103,22 @@ module.exports = (data) ->
 		if type in ['Object', 'Array']
 			@update bind_iterable value
 
-	set = []
-	traverse(data).forEach (value) ->
-		# parse urls
-		if value and value.hostname? and value.path?
-			return
+	# set = []
+	# traverse(data).forEach (value) ->
+	# 	# parse urls
+	# 	if value and value.hostname? and value.path?
+	# 		return
 
-		if typeof value is 'string' and value.indexOf('/') >= 0
-			console.log 'traverse', value
-			urlObj = url.parse value, true
-			if urlObj.hostname
-				urlObj.toString = -> @href
-				urlObj.toJSON = -> @href
-				set.push {path: this.path, value: urlObj}
+	# 	if typeof value is 'string' and value.indexOf('/') >= 0
+	# 		console.log 'traverse', value
+	# 		urlObj = url.parse value, true
+	# 		if urlObj.hostname
+	# 			urlObj.toString = -> @href
+	# 			urlObj.toJSON = -> @href
+	# 			set.push {path: this.path, value: urlObj}
 
-	for row in set
-		traverse(data).set row.path, row.value
+	# for row in set
+	# 	traverse(data).set row.path, row.value
 
 
 	return data
