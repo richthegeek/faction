@@ -126,6 +126,6 @@ module.exports = (data) ->
 				urlObj.toJSON = -> @href
 				urlObj.isURL = true
 
-				d.set path, urlObj
+				# d.set path, urlObj
 
 	return data
