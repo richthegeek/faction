@@ -43,28 +43,30 @@ module.exports = (settings, old_fact, mid_fact) ->
 	o_f = traverse(old_fact)
 	n_f.paths().forEach (path) ->
 		key = path[path.length - 1]
+
+		if not key or key.charAt(0) not in ['$', '%']
+			return
+
 		sub_path = path.slice 0, -1
 		new_val = n_f.get path
 		old_val = o_f.get sub_path
 
-		if not key or key.charAt(0) not in ['$', '_']
-			return
 
 		console.log key, sub_path, old_val, new_val
 
-		if key in ['$inc', '_inc']
+		if key in ['$inc', '%inc']
 			inc_by = Number(new_val) | 0
 			old_val = old_val | 0
 			n_f.set sub_path, old_val + inc_by
 
-		else if key is '_addToSet'
+		else if key is '%addToSet'
 			old_val = [].concat old_val
 			# skip if already exists
 			return for val in old_val when val is new_val
 			# add to set else
 			n_f.set sub_path, old_val.concat new_val
 
-		else if key is '_push'
+		else if key is '%push'
 			old_val = [].concat old_val
 			n_f.set sub_path, old_val.concat new_val
 
