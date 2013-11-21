@@ -96,7 +96,7 @@ module.exports = (data) ->
 
 	bind_string = (value) ->
 		# parse urls
-		urlObj = url.parse value
+		urlObj = url.parse value, true
 		if urlObj.protocol
 			urlObj.toString = -> @href
 			urlObj.toJSON = -> @href
