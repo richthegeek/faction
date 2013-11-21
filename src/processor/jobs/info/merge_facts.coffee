@@ -47,7 +47,7 @@ module.exports = (settings, old_fact, mid_fact) ->
 		new_val = n_f.get path
 		old_val = o_f.get sub_path
 
-		if key.charAt(0) not in ['$', '_']
+		if not key or key.charAt(0) not in ['$', '_']
 			return
 
 		console.log key, sub_path, old_val, new_val
