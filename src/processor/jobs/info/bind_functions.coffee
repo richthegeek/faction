@@ -97,7 +97,8 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
-		if (value and value.isURL?) or (@parent and @parent.node.isURL?)
+		if value?.isURL? or @parent?.node?.isURL?
+			console.log 'skip isURL'
 			return
 
 		if type is 'Array'
