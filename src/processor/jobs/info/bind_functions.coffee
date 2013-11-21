@@ -114,7 +114,7 @@ module.exports = (data) ->
 			return acc
 
 		d = traverse(data)
-		# strings = d.reduce fn, []
+		strings = d.reduce fn, []
 		# strings.forEach (row) ->
 		# 	path = row.path
 		# 	value = row.value
