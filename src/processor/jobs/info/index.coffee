@@ -109,7 +109,7 @@ module.exports =
 			# t 'start', mappings.length
 
 			parseMappings = (mapping, next) ->
-				addShim row, (err, row) ->
+				addShim row.data, (err, row) ->
 					query = _id: evaluate mapping.fact_identifier, {info: row}
 
 					if mapping.debug
