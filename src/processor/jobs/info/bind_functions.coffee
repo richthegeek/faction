@@ -115,20 +115,16 @@ module.exports = (data) ->
 			if (not @isLeaf) or (typeof value isnt 'string')
 				return
 
-			console.log '>', value
+			if value.indexOf('/') >= 0
+				urlObj = url.parse value, true
+				if urlObj.hostname
+					console.log 'url', value
+					urlObj.toString = -> @href
+					urlObj.toJSON = -> @href
+					urlObj.isURL = true
 
-		# 	path = row.path
-		# 	value = row.value
+					@update urlObj, true
 
-		# 	if typeof value is 'string' and value.indexOf('/') >= 0
-		# 		console.log 'traverse', value
-		# 		urlObj = url.parse value, true
-		# 		if urlObj.hostname
-		# 			urlObj.toString = -> @href
-		# 			urlObj.toJSON = -> @href
-		# 			urlObj.isURL = true
-
-		# 			d.set path, urlObj
 	catch e
 		console.log 'Something terrible happened', JSON.stringify(e)
 
