@@ -96,6 +96,7 @@ module.exports = (data) ->
 
 	bind_string = (value) ->
 		# parse urls
+		console.log 'bind string', value
 		if value.indexOf('/') >= 0
 			console.log 'Adding URL to', value
 			urlObj = url.parse value, true
