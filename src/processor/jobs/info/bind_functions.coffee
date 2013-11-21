@@ -120,8 +120,9 @@ module.exports = (data) ->
 				if type is 'String'
 					value = bind_string value
 
-				@update value
 			catch e
 				console.log 'An error occured', e
+
+			@update value
 
 	return data
