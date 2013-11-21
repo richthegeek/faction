@@ -106,26 +106,21 @@ module.exports = (data) ->
 				return urlObj
 
 	traverse(data).forEach (value) ->
-		try
-			type = Object::toString.call(value).slice(8, -1)
+		type = Object::toString.call(value).slice(8, -1)
 
-			console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
+		console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
 
-			if type is 'Array'
-				value = bind_array value
+		return
 
-			if type in ['Object', 'Array']
-				value = bind_iterable value
+		if type is 'Array'
+			value = bind_array value
 
-			if type is 'String'
-				value = bind_string value
+		if type in ['Object', 'Array']
+			value = bind_iterable value
 
-		catch e
-			console.log 'An error occured', e
+		if type is 'String'
+			value = bind_string value
 
-		try
-			@update value
-		catch e
-			console.log 'An occur errored', e
+		@update value
 
 	return data
