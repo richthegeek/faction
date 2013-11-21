@@ -41,11 +41,28 @@ module.exports = (settings, old_fact, mid_fact) ->
 	# handle increment calls.
 	n_f = traverse(new_fact)
 	o_f = traverse(old_fact)
-	n_f.paths().filter((path) -> path[path.length - 1] is '$inc').forEach (path) ->
-		sub_path = path.slice(0, -1)
-		inc_by = n_f.get(path)
-		old_val = o_f.get(sub_path) | 0
-		n_f.set(sub_path, old_val + inc_by)
+	n_f.paths().forEach (path) ->
+		key = path[path.length - 1]
+		sub_path = path.slice 0, -1
+		new_val = n_f.get path
+		old_val = o_f.get sub_path
+
+		if key in ['$inc', '_inc']
+			inc_by = Number(new_val) | 0
+			old_val = old_val | 0
+			n_f.set sub_path, old_val + inc_by
+
+		else if key is '_addToSet'
+			old_val = [].concat old_val
+			# skip if already exists
+			return for val in old_val when val is new_val
+			# add to set else
+			n_f.set sub_path, old_val.concat new_val
+
+		else if key is '_push'
+			old_val = [].concat old_val
+			n_f.set sub_path, old_val.concat new_val
+
 
 	# convert any dot notations into setColumn calls.
 	for key, val of new_fact when key.indexOf('.') >= 0

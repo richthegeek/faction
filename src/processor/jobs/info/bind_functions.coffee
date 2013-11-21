@@ -96,24 +96,23 @@ module.exports = (data) ->
 
 	bind_string = (value) ->
 		# parse urls
-		urlObj = url.parse value, true
-		if urlObj.protocol
-			urlObj.toString = -> @href
-			urlObj.toJSON = -> @href
-			return urlObj
+		if value.indexOf('/') >= 0
+			urlObj = url.parse value, true
+			if urlObj.hostname
+				urlObj.toString = -> @href
+				urlObj.toJSON = -> @href
+				return urlObj
 
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
 		if type is 'Array'
-			value = bind_array value
+			@update bind_array value
 
 		if type in ['Object', 'Array']
-			value = bind_iterable value
+			@update bind_iterable value
 
 		if type is 'String'
-			value = bind_string value
-
-		@update value
+			@update bind_string value
 
 	return data
