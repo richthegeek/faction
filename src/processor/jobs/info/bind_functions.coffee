@@ -111,15 +111,12 @@ module.exports = (data) ->
 			@update bind_iterable value
 
 	try
-		fn = (acc, x) ->
-			if @isLeaf # and typeof x is 'string'
-				null
-				# acc.push {path: this.path, value: x}
-			return acc
+		traverse(data).forEach (value) ->
+			if (not @isLeaf) or (typeof value isnt 'string')
+				return
 
-		d = traverse(data)
-		strings = d.reduce fn, []
-		# strings.forEach (row) ->
+			console.log '>', value
+
 		# 	path = row.path
 		# 	value = row.value
 
