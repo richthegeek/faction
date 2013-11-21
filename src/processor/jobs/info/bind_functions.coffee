@@ -1,7 +1,9 @@
 {getColumn, setColumn, deleteColumn} = require './column_ops'
+moment = require 'moment'
+traverse = require 'traverse'
+url = require 'url'
+
 module.exports = (data) ->
-	moment = require 'moment'
-	traverse = require 'traverse'
 
 	bind_array = (value) ->
 		if (1 for item in value when item._value? and item._date?).length > 0
@@ -92,6 +94,14 @@ module.exports = (data) ->
 		value.del = (col) ->
 			return deleteColumn @, col
 
+	bind_string = (value) ->
+		# parse urls
+		urlObj = url.parse value
+		if urlObj.protocol
+			urlObj.toString = -> @href
+			urlObj.toJSON = -> @href
+			return urlObj
+
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
@@ -100,6 +110,9 @@ module.exports = (data) ->
 
 		if type in ['Object', 'Array']
 			value = bind_iterable value
+
+		if type is 'String'
+			value = bind_string value
 
 		@update value
 
