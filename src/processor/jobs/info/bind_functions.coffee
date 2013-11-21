@@ -105,6 +105,9 @@ module.exports = (data) ->
 				urlObj.toJSON = -> @href
 				return urlObj
 
+		return value
+
+	set = []
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
@@ -114,7 +117,7 @@ module.exports = (data) ->
 			value = bind_array value
 
 		if type is 'String'
-			@update bind_string value, true
+			set.push {path: this.path, value: bind_string value}
 
 		return
 
@@ -123,5 +126,8 @@ module.exports = (data) ->
 
 
 		@update value
+
+	for row in set
+		traverse(data).set row.path, row.value
 
 	return data
