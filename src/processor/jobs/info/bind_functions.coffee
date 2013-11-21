@@ -103,6 +103,7 @@ module.exports = (data) ->
 		if type in ['Object', 'Array']
 			@update bind_iterable value
 
+	set = []
 	traverse(data).forEach (value) ->
 		# parse urls
 		if typeof value is 'string' and value.indexOf('/') >= 0
@@ -111,7 +112,10 @@ module.exports = (data) ->
 			if urlObj.hostname
 				urlObj.toString = -> @href
 				urlObj.toJSON = -> @href
-				@update urlObj, true
+				set.push {path: this.path, value: urlObj}
+
+	for row in set
+		traverse(data).set row.path, row.value
 
 
 	return data
