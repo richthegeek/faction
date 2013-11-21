@@ -94,33 +94,24 @@ module.exports = (data) ->
 		value.del = (col) ->
 			return deleteColumn @, col
 
-	bind_string = (value) ->
-		# parse urls
-		if value.indexOf('/') >= 0
-			urlObj = url.parse value, true
-			if urlObj.hostname
-				urlObj.toString = -> @href
-				urlObj.toJSON = -> @href
-				return urlObj
-
-		return value
-
-	set = []
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
 		if type is 'Array'
 			@update bind_array value
 
-		if type is 'String'
-			set.push {path: this.path, value: bind_string value}
+		if type in ['Object', 'Array']
+			@update bind_iterable value
 
 	traverse(data).forEach (value) ->
-		type = Object::toString.call(value).slice(8, -1)
-		if type in ['Object', 'Array']
-			set.push {path: this.path, value: bind_iterable value}
+		# parse urls
+		if typeof value is 'string' and value.indexOf('/') >= 0
+			console.log 'traverse', value
+			urlObj = url.parse value, true
+			if urlObj.hostname
+				urlObj.toString = -> @href
+				urlObj.toJSON = -> @href
+				@update urlObj, true
 
-	for row in set
-		traverse(data).set row.path, row.value
 
 	return data
