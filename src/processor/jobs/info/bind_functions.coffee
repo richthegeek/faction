@@ -114,18 +114,18 @@ module.exports = (data) ->
 
 	d = traverse(data)
 	strings = d.reduce fn, []
-	strings.forEach (row) ->
-		path = row.path
-		value = row.value
+	# strings.forEach (row) ->
+	# 	path = row.path
+	# 	value = row.value
 
-		if typeof value is 'string' and value.indexOf('/') >= 0
-			console.log 'traverse', value
-			urlObj = url.parse value, true
-			if urlObj.hostname
-				urlObj.toString = -> @href
-				urlObj.toJSON = -> @href
-				urlObj.isURL = true
+	# 	if typeof value is 'string' and value.indexOf('/') >= 0
+	# 		console.log 'traverse', value
+	# 		urlObj = url.parse value, true
+	# 		if urlObj.hostname
+	# 			urlObj.toString = -> @href
+	# 			urlObj.toJSON = -> @href
+	# 			urlObj.isURL = true
 
-				# d.set path, urlObj
+	# 			# d.set path, urlObj
 
 	return data
