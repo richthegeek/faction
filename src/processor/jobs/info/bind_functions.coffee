@@ -97,28 +97,29 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
+		if value and value.isURL?
+			return
+
 		if type is 'Array'
 			@update bind_array value
 
 		if type in ['Object', 'Array']
 			@update bind_iterable value
 
-	# set = []
-	# traverse(data).forEach (value) ->
-	# 	# parse urls
-	# 	if value and value.hostname? and value.path?
-	# 		return
+	fn = (acc, x) ->
+		if @isLeaf and typeof x is 'string'
+			acc.push {path: this.path, value: x}
+		return acc
 
-	# 	if typeof value is 'string' and value.indexOf('/') >= 0
-	# 		console.log 'traverse', value
-	# 		urlObj = url.parse value, true
-	# 		if urlObj.hostname
-	# 			urlObj.toString = -> @href
-	# 			urlObj.toJSON = -> @href
-	# 			set.push {path: this.path, value: urlObj}
-
-	# for row in set
-	# 	traverse(data).set row.path, row.value
-
+	d = traverse(data)
+	strings = d.reduce acc, []
+	strings.forEach (row) ->
+		if typeof value is 'string' and value.indexOf('/') >= 0
+			console.log 'traverse', value
+			urlObj = url.parse value, true
+			if urlObj.hostname
+				urlObj.toString = -> @href
+				urlObj.toJSON = -> @href
+				d.set row.path, urlObj
 
 	return data
