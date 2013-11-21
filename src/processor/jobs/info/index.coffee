@@ -112,7 +112,7 @@ module.exports =
 				query = _id: evaluate mapping.fact_identifier, {info: row}
 
 				if mapping.debug
-					console.log 'Query', query
+					console.log 'Query', mapping.fact_identifier, row, query
 
 				if not query._id?
 					return next()
