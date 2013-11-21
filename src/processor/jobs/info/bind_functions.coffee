@@ -110,7 +110,7 @@ module.exports = (data) ->
 		type = Object::toString.call(value).slice(8, -1)
 
 		# skip URL on second pass
-		if this.parent.isURL
+		if @parent?.isURL
 			return
 
 		console.log 'traverse', type, JSON.stringify(value).substring(0, 30)
