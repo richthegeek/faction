@@ -68,7 +68,7 @@ module.exports =
 		async.series fns, (err, results) ->
 			job.progress 1, 3
 
-			mappings = results.mappings.filter (mapping) -> mapping and mapping.info_type is row._type
+			mappings = results.mappings.filter (mapping) -> mapping and (not mapping.disabled) and mapping.info_type is row._type
 			settings = results.settings
 
 			###
