@@ -1,12 +1,8 @@
 {getColumn, setColumn, deleteColumn} = require './column_ops'
 moment = require 'moment'
 traverse = require 'traverse'
-url = require 'url'
 
 module.exports = (data) ->
-
-	if not traverse(data)?.reduce?
-		return data
 
 	bind_array = (value) ->
 		if (1 for item in value when item._value? and item._date?).length > 0
@@ -100,28 +96,12 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
-		# if value?.isURL? or @parent?.node?.isURL?
-			# console.log 'skip isURL'
-			# return
-
 		if type is 'Array'
-			@update bind_array value
+			value = bind_array value
 
 		if type in ['Object', 'Array']
-			@update bind_iterable value
+			value = bind_iterable value
 
-	# try
-	# 	traverse(data).forEach (value) ->
-	# 		if (not @isLeaf) or (typeof value isnt 'string')
-	# 			return
-
-	# 		if value.indexOf('/') >= 0
-	# 			urlObj = url.parse value, true
-	# 			if urlObj.hostname
-	# 				urlObj.toString = -> @href
-	# 				urlObj.toJSON = -> @href
-	# 				urlObj.isURL = true
-
-	# 				@update urlObj, true
+		@update value
 
 	return data
