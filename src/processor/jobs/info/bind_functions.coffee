@@ -100,9 +100,9 @@ module.exports = (data) ->
 	traverse(data).forEach (value) ->
 		type = Object::toString.call(value).slice(8, -1)
 
-		if value?.isURL? or @parent?.node?.isURL?
-			console.log 'skip isURL'
-			return
+		# if value?.isURL? or @parent?.node?.isURL?
+			# console.log 'skip isURL'
+			# return
 
 		if type is 'Array'
 			@update bind_array value
@@ -110,18 +110,18 @@ module.exports = (data) ->
 		if type in ['Object', 'Array']
 			@update bind_iterable value
 
-	try
-		traverse(data).forEach (value) ->
-			if (not @isLeaf) or (typeof value isnt 'string')
-				return
+	# try
+	# 	traverse(data).forEach (value) ->
+	# 		if (not @isLeaf) or (typeof value isnt 'string')
+	# 			return
 
-			if value.indexOf('/') >= 0
-				urlObj = url.parse value, true
-				if urlObj.hostname
-					urlObj.toString = -> @href
-					urlObj.toJSON = -> @href
-					urlObj.isURL = true
+	# 		if value.indexOf('/') >= 0
+	# 			urlObj = url.parse value, true
+	# 			if urlObj.hostname
+	# 				urlObj.toString = -> @href
+	# 				urlObj.toJSON = -> @href
+	# 				urlObj.isURL = true
 
-					@update urlObj, true
+	# 				@update urlObj, true
 
 	return data
