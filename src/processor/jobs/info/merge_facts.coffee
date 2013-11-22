@@ -8,35 +8,75 @@ module.exports = (settings, old_fact, mid_fact) ->
 
 	new_fact = xtend old_fact, mid_fact
 
+	sets = {}
+
+	settings.time ?= new Date
+
 	# apply the field_modes
-	for field, mode of settings.field_modes when mid_fact[field]
+	for field, mode of settings.field_modes when value = mid_fact[field]
 		if mode.eval
 			continue
 
+		old_value = old_fact[field]
+
 		if mode is 'all'
-			orig = old_fact[field] or []
+			orig = old_value or []
 			orig = [] if not Array.isArray orig
-			list = orig.concat mid_fact[field]
+			list = orig.concat value
 			# ensure all entries are in the right format
 			for k, v of list when not v._time
 				list[k] =
-					_time: (settings.time or new Date)
+					_time: settings.time
 					_value: v
+
+			sets.$push ?= {}
+			sets.$push[field] ?= {$each: []}
+			sets.$push[field].$each.push {
+				_time: settings.time
+				_value: value
+			}
 
 			setColumn new_fact, field, list.filter (v) -> !! v
 
 		if mode is 'oldest'
-			setColumn new_fact, field, old_fact[field] ? mid_fact[field]
+			if typeof old_value is 'undefined'
+				sets.$set ?= {}
+				sets.$set[field] = value
 
-		if mode is 'min'
-			a = Number(mid_fact[field]) or Math.min()
-			b = Number(old_fact[field]) or Math.min()
-			setColumn new_fact, field, Math.min a, b
+			setColumn new_fact, field, old_value ? value
 
-		if mode is 'max'
-			a = Number(mid_fact[field]) or Math.max()
-			b = Number(old_fact[field]) or Math.max()
-			setColumn new_fact, field, Math.max a, b
+		if mode in ['min', 'max']
+			value = Math[mode].apply null, [value, old_value].map(Number).filter((x) -> ! isNaN x)
+
+			sets.$set ?= {}
+			sets.$set[field] = value
+
+			setColumn new_fact, field, value
+
+		if mode is 'inc'
+			a = Number(value) or 1
+			b = Number(old_value) or 0
+
+			sets.$inc ?= {}
+			sets.$inc[field] = a
+
+			setColumn new_fact, field, a + b
+
+		if mode is 'push'
+			orig = old_value or []
+			orig = [] if not Array.isArray orig
+			list = orig.concat value
+
+
+			sets.$push ?= {}
+			sets.$push[field] ?= {$each: []}
+			sets.$push[field].$each.push value
+
+		if mode is 'push_unique'
+			sets.$addToSet ?= {}
+			sets.$addToSet[field] ?= {$each: []}
+			sets.$addToSet[field].$each.push value
+
 
 	# handle increment calls.
 	n_f = traverse(new_fact)
@@ -52,23 +92,10 @@ module.exports = (settings, old_fact, mid_fact) ->
 		new_val = new_val[key] or new_val
 		old_val = o_f.get sub_path
 
-		# console.log key, sub_path, old_val, new_val
-
 		if key in ['$inc', '%inc']
 			inc_by = Number(new_val) | 0
 			old_val = old_val | 0
 			n_f.set sub_path, old_val + inc_by
-
-		else if key is '%addToSet'
-			old_val = [].concat old_val
-			# skip if already exists
-			return for val in old_val when val is new_val
-			# add to set else
-			n_f.set sub_path, old_val.concat new_val
-
-		else if key is '%push'
-			old_val = [].concat old_val
-			n_f.set sub_path, old_val.concat new_val
 
 
 	# convert any dot notations into setColumn calls.
@@ -76,4 +103,4 @@ module.exports = (settings, old_fact, mid_fact) ->
 		delete new_fact[key]
 		setColumn new_fact, key, val
 
-	return new_fact
+	return {fact: new_fact, updates: sets}
