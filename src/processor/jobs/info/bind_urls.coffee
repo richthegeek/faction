@@ -9,7 +9,6 @@ module.exports = (data) ->
 				for key, val of obj
 					value[key] = val
 
-				console.log 'Bind URL', value
 				@update value, true
 
 	return data
