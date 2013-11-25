@@ -157,8 +157,8 @@ module.exports =
 								parseObject mapping.fields, context, (obj) ->
 									obj._id = query._id
 
-									if mapping.debug
-										console.log 'Mapped', mapping, obj
+									# if mapping.debug
+									# 	console.log 'Mapped', mapping, obj
 
 									for key, val of obj when key.indexOf('.') >= 0
 										delete obj[key]
@@ -178,23 +178,30 @@ module.exports =
 				for key of set.foreign_keys
 					info.fact.del key
 
-				# info.model is a Fact_Model instance. Reimport to add re-add the shim...
 				set.time = time
-				fact = mergeFacts set, info.fact.data, info.info
+				merge = mergeFacts set, info.fact.data, info.info
+				# fact is kinda not used, other than getting the ID. Consider removing to get rid of xtend cost.
+				fact = merge.fact
+				# updates is an array of field updates. Conflicts shouldn't occur, but who knows
+				updates = merge.updates
 
-				if fact.data?.data?
-					delete fact.data
-
-				for key, mode of set.field_modes when mode is 'delete'
-					info.fact.del.call fact, key
-
-				fact._updated = new Date
+				updates._update = {type: '$set', value: new Date}
 
 				if not fact._id
 					return next()
 
 				# save this into the target collection, move on
-				info.model.table.save fact, (err) ->
+				delete updates._id
+
+				updateObj = {}
+				for key, opts of updates
+					updateObj[opts.type] ?= {}
+					updateObj[opts.type][key] = opts.value
+
+				query = {_id: fact._id}
+				options = {upsert: true}
+
+				info.model.table.update query, updateObj, options, (err) ->
 					next err, {
 						fact_id: fact._id,
 						fact_type: info.mapping.fact_type,

@@ -6,9 +6,8 @@ module.exports = (data) ->
 		if value and typeof value is 'string'
 			obj = url.parse value
 			if obj.pathname and obj.host
-				for key, val of obj
-					value[key] = val
-
-				@update value, true
+				obj.toString = -> @href
+				obj.toJSON = -> @toString()
+				@update obj, true
 
 	return data
