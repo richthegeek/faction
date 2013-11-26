@@ -150,15 +150,15 @@ module.exports =
 								conds.push not err
 								pass = conds.every Boolean
 								if not pass
-									if conds.filter(Boolean).length > 1
+									if mapping.debug
 										console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
 									return next()
 
 								parseObject mapping.fields, context, (obj) ->
 									obj._id = query._id
 
-									# if mapping.debug
-									# 	console.log 'Mapped', mapping, obj
+									if mapping.debug
+										console.log 'Mapped', mapping, obj
 
 									for key, val of obj when key.indexOf('.') >= 0
 										delete obj[key]
@@ -188,6 +188,8 @@ module.exports =
 				updates._update = {type: '$set', value: new Date}
 
 				if not fact._id
+					if info.mapping.debug
+						console.log 'No Fact ID', fact
 					return next()
 
 				# save this into the target collection, move on
@@ -200,6 +202,12 @@ module.exports =
 
 				query = {_id: fact._id}
 				options = {upsert: true}
+
+				# this is more generic than it seems, should be in a different place eventually
+				bindUrls.unbind updateObj
+
+				if info.mapping.debug
+					console.log 'Write', query, updateObj
 
 				info.model.table.update query, updateObj, options, (err) ->
 					next err, {

@@ -33,6 +33,11 @@ module.exports = (settings, old_fact, mid_fact) ->
 			setColumn new_fact, field, a + b
 
 		if value
+
+			if mode is 'inc_map'
+				delete sets[field]
+				sets[field + '.' + value] = {type: '$inc', value: 1}
+
 			if mode is 'all'
 				orig = old_value or []
 				orig = [] if not Array.isArray orig

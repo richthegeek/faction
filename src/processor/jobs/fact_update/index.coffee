@@ -5,7 +5,7 @@ Cache = require 'shared-cache'
 
 module.exports =
 
-	disabled: false
+	disabled: true
 	concurrency: 1
 	timeout: 10000
 
