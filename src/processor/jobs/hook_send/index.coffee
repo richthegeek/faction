@@ -61,9 +61,6 @@ module.exports =
 					# double-JSON to strip getters at this stage
 					fact = JSON.parse JSON.stringify result
 
-					console.log 'HOOK SKIP', fact.data._id
-					return done()
-
 					# todo: handle failures, re-send, etc...
 					cb = (err, res, body) ->
 						# if res.statusCode.toString().charAt(0) is '2'
