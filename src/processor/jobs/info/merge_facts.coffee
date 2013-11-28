@@ -36,6 +36,7 @@ module.exports = (settings, old_fact, mid_fact) ->
 
 			if mode is 'inc_map'
 				delete sets[field]
+				value = value.replace /\./g, '%2E'
 				sets[field + '.' + value] = {type: '$inc', value: 1}
 
 			if mode is 'all'
