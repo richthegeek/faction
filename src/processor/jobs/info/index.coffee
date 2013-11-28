@@ -182,10 +182,14 @@ module.exports =
 				merge = mergeFacts set, info.fact.data, info.info
 				# fact is kinda not used, other than getting the ID. Consider removing to get rid of xtend cost.
 				fact = merge.fact
+
 				# updates is an array of field updates. Conflicts shouldn't occur, but who knows
+				# to avoid conflicts, it comes in as a map of "field name" to action.
+				# Conflicts can still occur if two things affect the same field with different names (foo[0] and foo.0, for example)
 				updates = merge.updates
 
-				updates._update = {type: '$set', value: new Date}
+				updates._updated = {type: '$set', value: time}
+				fact._updated = time
 
 				if not fact._id
 					if info.mapping.debug

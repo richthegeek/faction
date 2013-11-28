@@ -5,7 +5,7 @@ Cache = require 'shared-cache'
 
 module.exports =
 
-	disabled: true
+	disabled: false
 	concurrency: 1
 
 	exec: (job, done) ->
@@ -13,8 +13,6 @@ module.exports =
 		accountID = job.data.account
 		time = new Date parseInt job.created_at
 		row = job.data.data
-
-		console.log 'HOOK', row
 
 		fns = {}
 		fns.account = (next) ->
@@ -62,6 +60,9 @@ module.exports =
 				results.fact.withMap hook.with, hook.map, {fact: results.fact}, (err, result) ->
 					# double-JSON to strip getters at this stage
 					fact = JSON.parse JSON.stringify result
+
+					console.log 'HOOK SKIP', fact.data._id
+					return done()
 
 					# todo: handle failures, re-send, etc...
 					cb = (err, res, body) ->

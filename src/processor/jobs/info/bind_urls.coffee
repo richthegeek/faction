@@ -8,7 +8,7 @@ module.exports = (data) ->
 			obj = url.parse value, true
 			if obj.pathname and obj.host
 
-				if @parent.node.pathname? and @parent.node.host?
+				if @parent?.node?.pathname? and @parent.node.host?
 					return
 
 				@update obj, true
@@ -17,5 +17,5 @@ module.exports = (data) ->
 
 module.exports.unbind = (data) ->
 	traverse(data).forEach (value) ->
-		if value.pathname and value.href
+		if value?.pathname? and value.href?
 			@update value.href, true

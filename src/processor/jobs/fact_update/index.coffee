@@ -5,7 +5,7 @@ Cache = require 'shared-cache'
 
 module.exports =
 
-	disabled: true
+	disabled: false
 	concurrency: 1
 	timeout: 10000
 
@@ -61,6 +61,9 @@ module.exports =
 					debugMode = debugMode or fact.data.debug is true
 
 					# if the fact was updated, bail early - a later fact update should pick it up
+					if not fact._updated
+						return next 'No timestamp'
+
 					if row.version and fact._updated.toJSON() isnt row.version
 						job.log "Skipped due to invalid version"
 						return next "Invalid version"
@@ -86,9 +89,8 @@ module.exports =
 			fact = results.fact
 
 			if err
-				# supress this "error"
 				if err is 'Invalid version'
-					return done()
+					err = null
 				return done err
 
 			if not fact?.data?
