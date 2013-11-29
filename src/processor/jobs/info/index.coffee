@@ -112,9 +112,7 @@ module.exports =
 				context =
 					info: row
 					moment: moment
-					url: (value, key = 'href') ->
-						console.log 'get', value, key
-						require('url').parse(value, true)[key]
+					url: (value, key = 'href') -> require('url').parse(value, true)[key]
 
 				query = _id: evaluate mapping.fact_identifier, context
 
