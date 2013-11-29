@@ -3,9 +3,6 @@ q = require 'q'
 async = require 'async'
 Cache = require 'shared-cache'
 
-bindUrls = require '../info/bind_urls'
-bindUrls()
-
 module.exports =
 
 	disabled: false
@@ -104,6 +101,7 @@ module.exports =
 				q: q
 				fact: fact.data,
 				debug: debug
+				url: (value, key = 'href') -> require('url').parse(value, true)[key]
 				load: (type, id) ->
 					defer = q.defer()
 					new Fact_deferred_Model account, type, () ->

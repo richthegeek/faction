@@ -112,8 +112,12 @@ module.exports =
 			# t 'start', mappings.length
 
 			parseMappings = (mapping, next) ->
+				context =
+					info: row
+					moment: moment
+					url: (value, key = 'href') -> require('url').parse(value, true)[key]
 
-				query = _id: evaluate mapping.fact_identifier, {info: row}
+				query = _id: evaluate mapping.fact_identifier, context
 
 				if mapping.debug
 					console.log 'Query', query
@@ -138,12 +142,10 @@ module.exports =
 							delete row._type
 							delete row._id if Object::toString.call(row._id) is '[object Object]'
 
-							context = {info: row, fact: fact}
-							context.moment = moment
+							# copy fact onto previously defined context
+							context.fact = fact
 
-							evalCond = (cond, next) ->
-								Fact_deferred_Model.evaluate cond, context, next
-
+							evalCond = (cond, next) -> Fact_deferred_Model.evaluate cond, context, next
 							async.map mapping.conditions, evalCond, (err, conds) ->
 								# if an error occured, treat it as a conditions failure
 								conds.push not err
