@@ -3,6 +3,9 @@ q = require 'q'
 async = require 'async'
 Cache = require 'shared-cache'
 
+bindUrls = require '../info/bind_urls'
+bindUrls()
+
 module.exports =
 
 	disabled: false

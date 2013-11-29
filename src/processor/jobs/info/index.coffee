@@ -9,6 +9,7 @@ addShim = require './add_shim'
 {getColumn, setColumn, deleteColumn} = require './column_ops'
 
 bindUrls = require './bind_urls'
+bindUrls()
 
 module.exports =
 
@@ -112,8 +113,6 @@ module.exports =
 
 			parseMappings = (mapping, next) ->
 
-				row = bindUrls row
-
 				query = _id: evaluate mapping.fact_identifier, {info: row}
 
 				if mapping.debug
@@ -206,9 +205,6 @@ module.exports =
 
 				query = {_id: fact._id}
 				options = {upsert: true}
-
-				# this is more generic than it seems, should be in a different place eventually
-				bindUrls.unbind updateObj
 
 				if info.mapping.debug
 					console.log 'Write', query, updateObj
