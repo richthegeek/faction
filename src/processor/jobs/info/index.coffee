@@ -8,9 +8,6 @@ addShim = require './add_shim'
 {evaluate, parseObject} = require './eval'
 {getColumn, setColumn, deleteColumn} = require './column_ops'
 
-bindUrls = require './bind_urls'
-bindUrls()
-
 module.exports =
 
 	concurrency: 1
