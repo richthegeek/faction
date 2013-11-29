@@ -72,7 +72,6 @@ module.exports = class Fact_deferred_Model extends Model
 		@getSettings (err, settings) =>
 			for key, props of settings.foreign_keys or {}
 				delete @data[key]
-				console.log 'Defer', key, typeof @data[key]
 				@data.defer key, (key, data, next) =>
 					props = settings.foreign_keys[key]
 					Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
