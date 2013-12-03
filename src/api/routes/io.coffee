@@ -60,7 +60,8 @@ module.exports = (server) ->
 				# empty stuff...
 				collection.remove (err) ->
 					if err then return next err
-					collection.insert entries, next
+
+					async.map entries, collection.insert.bind(collection), next
 
 			, (err, result) ->
 				next res.send arguments
