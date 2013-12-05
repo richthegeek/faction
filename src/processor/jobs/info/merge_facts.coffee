@@ -39,6 +39,30 @@ module.exports = (settings, old_fact, mid_fact) ->
 				value = value.replace /\./g, '%2E'
 				sets[field + '.' + value] = {type: '$inc', value: 1}
 
+			if mode is 'inc_day'
+				delete sets[field]
+				moment = require 'moment'
+				key = moment().format('YYYY-MM-DD')
+				sets[field + '.' + key] = {type: '$inc', value: 1}
+
+			if mode is 'inc_week'
+				delete sets[field]
+				moment = require 'moment'
+				key = moment().format('YYYY-WW')
+				sets[field + '.' + key] = {type: '$inc', value: 1}
+
+			if mode is 'inc_month'
+				delete sets[field]
+				moment = require 'moment'
+				key = moment().format('YYYY-MM')
+				sets[field + '.' + key] = {type: '$inc', value: 1}
+
+			if mode is 'inc_year'
+				delete sets[field]
+				moment = require 'moment'
+				key = moment().format('YYYY')
+				sets[field + '.' + key] = {type: '$inc', value: 1}
+
 			if mode is 'all'
 				orig = old_value or []
 				orig = [] if not Array.isArray orig
