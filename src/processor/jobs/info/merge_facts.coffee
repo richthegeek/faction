@@ -24,46 +24,33 @@ module.exports = (settings, old_fact, mid_fact) ->
 		value = mid_fact[field]
 		old_value = old_fact[field]
 
-		if mode is 'inc'
-			a = Number(value) or 1
-			b = Number(old_value) or 0
+		delete sets[field]
+		switch mode
+			when 'inc'
+				a = Number(value) or 1
+				b = Number(old_value) or 0
+				sets[field] = {type: '$inc', value: a}
 
-			sets[field] = {type: '$inc', value: a}
+			when 'inc_day', 'inc_week', 'inc_month', 'inc_year'
+				moment = require 'moment'
+				formats =
+					inc_day: 'YYYY-MM-DD'
+					inc_week: 'YYYY-WW'
+					inc_month: 'YYYY-MM'
+					inc_year: 'YYYY'
+				key = moment().format formats[mode]
+				sets[field + '.' + key] = {type: '$inc', value: 1}
 
-			setColumn new_fact, field, a + b
+		# following field modes require a value to be set
+		if not value
+			continue
 
-		if value
-
-			if mode is 'inc_map'
-				delete sets[field]
+		switch mode
+			when 'inc_map'
 				value = value.replace /\./g, '%2E'
 				sets[field + '.' + value] = {type: '$inc', value: 1}
 
-			if mode is 'inc_day'
-				delete sets[field]
-				moment = require 'moment'
-				key = moment().format('YYYY-MM-DD')
-				sets[field + '.' + key] = {type: '$inc', value: 1}
-
-			if mode is 'inc_week'
-				delete sets[field]
-				moment = require 'moment'
-				key = moment().format('YYYY-WW')
-				sets[field + '.' + key] = {type: '$inc', value: 1}
-
-			if mode is 'inc_month'
-				delete sets[field]
-				moment = require 'moment'
-				key = moment().format('YYYY-MM')
-				sets[field + '.' + key] = {type: '$inc', value: 1}
-
-			if mode is 'inc_year'
-				delete sets[field]
-				moment = require 'moment'
-				key = moment().format('YYYY')
-				sets[field + '.' + key] = {type: '$inc', value: 1}
-
-			if mode is 'all'
+			when 'all'
 				orig = old_value or []
 				orig = [] if not Array.isArray orig
 				list = orig.concat value
@@ -78,31 +65,23 @@ module.exports = (settings, old_fact, mid_fact) ->
 					_value: value
 				}}
 
-				setColumn new_fact, field, list.filter (v) -> !! v
-
-			if mode is 'oldest'
+			when 'oldest'
 				if typeof old_value is 'undefined'
 					sets.$set ?= {}
 					sets.$set[field] = value
 					sets[field] = {type: '$set', value: value}
 
-				setColumn new_fact, field, old_value ? value
-
-			if mode in ['min', 'max']
+			when 'min', 'max'
 				value = Math[mode].apply null, [value, old_value].map(Number).filter((x) -> ! isNaN x)
-
 				sets[field] = {type: '$set', value: value}
 
-				setColumn new_fact, field, value
-
-			if mode is 'push'
+			when 'push'
 				orig = old_value or []
 				orig = [] if not Array.isArray orig
 				list = orig.concat value
-
 				sets[field] = {type: '$push', value: value}
 
-			if mode is 'push_unique'
+			when 'push_unique'
 				sets[field] = {type: '$addToSet', value: value}
 
 	return {fact: new_fact, updates: sets}
