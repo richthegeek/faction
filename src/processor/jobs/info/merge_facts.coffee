@@ -31,6 +31,7 @@ module.exports = (settings, old_fact, mid_fact) ->
 
 		# allow not-null for certain types
 		if (not mid_fact[field]?) and (val.not_null is true)
+			console.log 'Not null caused a skip', mid_fact[field]?, mid_fact[field], val
 			continue
 
 		switch mode
