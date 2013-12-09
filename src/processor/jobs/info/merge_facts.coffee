@@ -39,7 +39,8 @@ module.exports = (settings, old_fact, mid_fact) ->
 					inc_month: 'YYYY-MM'
 					inc_year: 'YYYY'
 				key = moment().format formats[mode]
-				sets[field + '.' + key] = {type: '$inc', value: 1}
+				value = Number(value) or 1
+				sets[field + '.' + key] = {type: '$inc', value: value}
 
 		# following field modes require a value to be set
 		if not value
