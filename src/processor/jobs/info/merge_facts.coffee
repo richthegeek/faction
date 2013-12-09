@@ -21,9 +21,6 @@ module.exports = (settings, old_fact, mid_fact) ->
 		# mode can be a string or an object with a mode property
 		mode = val.mode or val
 
-
-		console.log field, mode
-
 		if mode is 'eval' or val.eval
 			continue
 
@@ -31,10 +28,8 @@ module.exports = (settings, old_fact, mid_fact) ->
 		old_value = old_fact[field]
 		delete sets[field]
 
-
 		# allow not-null for certain types
 		if (not mid_fact[field]?) and (val.not_null is true)
-			console.log 'Not null caused a skip', mid_fact[field]?, mid_fact[field], val
 			continue
 
 		switch mode
