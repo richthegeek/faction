@@ -21,13 +21,16 @@ module.exports = (settings, old_fact, mid_fact) ->
 		# mode can be a string or an object with a mode property
 		mode = val.mode or val
 
+
+		console.log field, mode
+
 		if mode is 'eval' or val.eval
 			continue
 
 		value = mid_fact[field]
 		old_value = old_fact[field]
-
 		delete sets[field]
+
 
 		# allow not-null for certain types
 		if (not mid_fact[field]?) and (val.not_null is true)
