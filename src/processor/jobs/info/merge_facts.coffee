@@ -17,14 +17,22 @@ module.exports = (settings, old_fact, mid_fact) ->
 	new_fact = xtend old_fact, mid_fact
 
 	# apply the field_modes
-	for field, mode of settings.field_modes
-		if mode.eval
+	for field, val of settings.field_modes
+		# mode can be a string or an object with a mode property
+		mode = val.mode or val
+
+		if mode is 'eval' or val.eval
 			continue
 
 		value = mid_fact[field]
 		old_value = old_fact[field]
 
 		delete sets[field]
+
+		# allow not-null for certain types
+		if (not mid_fact[field]?) and (val.not_null is true)
+			continue
+
 		switch mode
 			when 'inc'
 				a = Number(value) or 1
