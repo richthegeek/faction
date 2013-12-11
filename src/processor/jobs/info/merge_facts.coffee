@@ -1,5 +1,5 @@
+moment = require 'moment'
 xtend = require 'xtend'
-traverse = require 'traverse'
 {getColumn, setColumn, deleteColumn} = require './column_ops'
 
 module.exports = (settings, old_fact, mid_fact) ->
@@ -22,32 +22,28 @@ module.exports = (settings, old_fact, mid_fact) ->
 		mode = val.mode or val
 
 		if mode is 'eval' or val.eval
+			delete sets[field]
 			continue
 
-		value = mid_fact[field]
-		old_value = old_fact[field]
-		delete sets[field]
+		value = getColumn(mid_fact, field).shift()
 
-		# allow not-null for certain types
-		if (not mid_fact[field]?) and (val.not_null is true)
-			continue
+		formats =
+			day: 'YYYY-MM-DD'
+			week: 'YYYY-WW'
+			month: 'YYYY-MM'
+			year: 'YYYY'
+		if format = formats[val.grouping]
+			if mode in ['newest', 'oldest', 'inc', 'min', 'max']
+				delete sets[field]
+				field = field + '.' + moment().format format
 
-		switch mode
-			when 'inc'
-				a = Number(value) or 1
-				b = Number(old_value) or 0
-				sets[field] = {type: '$inc', value: a}
+		old_value = getColumn(old_fact, field).shift()
 
-			when 'inc_day', 'inc_week', 'inc_month', 'inc_year'
-				moment = require 'moment'
-				formats =
-					inc_day: 'YYYY-MM-DD'
-					inc_week: 'YYYY-WW'
-					inc_month: 'YYYY-MM'
-					inc_year: 'YYYY'
-				key = moment().format formats[mode]
-				value = Number(value) or 1
-				sets[field + '.' + key] = {type: '$inc', value: value}
+		# allow not-null for inc
+		if mode is 'inc' and (mid_fact[field]? or val.not_null isnt true)
+			a = Number(value) or 1
+			b = Number(old_value) or 0
+			sets[field] = {type: '$inc', value: a}
 
 		# following field modes require a value to be set
 		if not value
@@ -73,15 +69,16 @@ module.exports = (settings, old_fact, mid_fact) ->
 					_value: value
 				}}
 
+			when 'newest'
+				sets[field] = {type: '$set', value: value}
+
 			when 'oldest'
 				if typeof old_value is 'undefined'
-					sets.$set ?= {}
-					sets.$set[field] = value
 					sets[field] = {type: '$set', value: value}
 
 			when 'min', 'max'
-				value = Math[mode].apply null, [value, old_value].map(Number).filter((x) -> ! isNaN x)
-				sets[field] = {type: '$set', value: value}
+				if value is Math[mode].apply null, [value, old_value].map(Number).filter((x) -> ! isNaN x)
+					sets[field] = {type: '$set', value: value}
 
 			when 'push'
 				orig = old_value or []

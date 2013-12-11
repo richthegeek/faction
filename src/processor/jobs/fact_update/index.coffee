@@ -2,6 +2,8 @@ http = require('./http')
 q = require 'q'
 async = require 'async'
 Cache = require 'shared-cache'
+evaluator = require './eval'
+moment = require 'moment'
 
 module.exports =
 
@@ -99,7 +101,8 @@ module.exports =
 			context =
 				http: http
 				q: q
-				fact: fact.data,
+				moment: moment
+				fact: fact.data
 				debug: debug
 				url: (value, key = 'href') -> require('url').parse(value, true)[key]
 				load: (type, id) ->
@@ -112,31 +115,18 @@ module.exports =
 					return defer.promise
 
 			# evaluate fact data...
-			evals = ([key, props] for key, props of settings.field_modes when props.eval)
-			evaluate = (arr, next) ->
-				[key, props] = arr
-				# evaluate the value
-
-				# context = getContext fact
-				fact.withMap [], props.map, context, (err, map) =>
-					debug 'Preval', map
-					for k, v of context
-						map[k] = map[k] ? v
-					fact.data.eval props.eval, map, (err, result) =>
-
-						debug 'Eval', props.eval, result
-
-						result = result ? props.default ? null
-
-						fact.data.set.call fact.data.data, key, result
-						next null, {key: key, value: result}
+			evals = ({key: key, settings: props} for key, props of settings.field_modes when props.eval)
+			evaluate = (obj, next) ->
+				evaluator fact, obj.key, obj.settings, context, next
 
 			doConditions = (condition, next) ->
 				fact.evaluateCondition condition, context, (err, result) ->
 					result = not err and result.every Boolean
-					next null, {key: '_conditions.' + condition.condition_id, value: result}
+					next null, {key: '_conditions.' + condition.condition_id, value: result, mode: 'set'}
 
 			async.mapSeries evals, evaluate, (err, cols1) ->
+				# unwrap these incase the eval returns an array of columns!
+				cols1 = [].concat.apply [], cols1
 				async.mapSeries conditions, doConditions, (err, cols2) ->
 					columns = cols1.concat(cols2).filter Boolean
 
@@ -144,11 +134,16 @@ module.exports =
 					time = new Date
 
 					if columns.length > 0
-						set = {}
-						set[col.key] = col.value for col in columns
-						set._updated = time
+						set = $set: {}
 
-						fact.table.update {_id: fact.data._id}, {$set: set}, (err) ->
+						for column in columns
+							mode = '$' + (column.mode or 'set')
+							set[mode] ?= {}
+							set[mode][column.key] = column.value
+
+						set.$set._updated = time
+
+						fact.table.update {_id: fact.data._id}, set, (err) ->
 							if err
 								console.error 'Fact Update write failure', fact.table.db.databaseName, fact.table.collectionName, fact.data._id, arguments
 

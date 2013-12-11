@@ -198,7 +198,7 @@ module.exports =
 				delete updates._id
 
 				updateObj = {}
-				for key, opts of updates
+				for key, opts of updates when opts
 					updateObj[opts.type] ?= {}
 					updateObj[opts.type][key] = opts.value
 
