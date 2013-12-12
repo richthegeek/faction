@@ -16,14 +16,14 @@ module.exports = class FactSettings_Model extends Model
 			next()
 
 	validate: (data, callback) ->
-		modes = ['all', 'newest', 'oldest', 'max', 'min']
+		modes = ['all', 'newest', 'oldest', 'max', 'min', 'inc', 'inc_map', 'push', 'push_unique', 'eval']
 		for field, mode of data.field_modes
 			if typeof mode is 'object'
 				mode.mode ?= 'newest'
 				mode = mode.mode
 				data.field_modes[field].mode = mode
 			if mode not in modes
-				return callback 'Field mode must be one of (' + modes.join(', ') + ')'
+				return callback 'Field mode must be one of (' + modes.join(', ') + '). Was ' + mode
 
 		@data.foreign_keys = data.foreign_keys ?= {}
 		for key, props of data.foreign_keys
