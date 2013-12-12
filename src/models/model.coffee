@@ -70,7 +70,6 @@ module.exports = class Model
 						sort[key] = (val is 'desc' and -1) or 1
 
 				if sort isnt false
-					console.log 'sorting', sort
 					cursor.sort(sort)
 
 				cursor.skip(skip).limit(req.query.limit).toArray (err, items) =>

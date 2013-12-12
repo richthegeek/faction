@@ -45,6 +45,9 @@ server.on 'VersionNotAllowed', (req, res, next) -> next res.send 404, status: 'e
 
 # logging
 server.on 'after', (req, res, route, err) ->
+	if req.suppressLog or res.suppressLog
+		return
+
 	time = new Date - res._time
 	req.route ?= {}
 	req.route.path ?= req._path ? '/'
@@ -120,6 +123,27 @@ global.Routes = files.routes
 
 for name, fn of Auth
 	server.use Auth[name]
+
+# parse date-likes in body
+# this happens AFTER auth, to resolve any issues with hash matching
+server.use (req, res, next) ->
+	recurse = (obj) ->
+		if obj and typeof obj is 'object'
+			try
+				keys = Object.keys obj
+				for key in keys
+					obj[key] = recurse obj[key]
+		if typeof obj is 'string'
+			if obj.match /^[0-9]{4}-(0?[0-9]|1[12])-[0-9]/
+				date = Date.parse obj # regex:
+				if not isNaN date
+					obj = new Date date
+
+		return obj
+
+	recurse req.body
+	next()
+
 
 for group, fn of Routes
 	fn server
