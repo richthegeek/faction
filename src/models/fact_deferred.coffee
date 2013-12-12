@@ -182,8 +182,8 @@ module.exports = class Fact_deferred_Model extends Model
 						def = path[1]
 						path = path[0]
 
-					@data.eval path, context, (err, result) ->
-						if err then console.log 'WM', path, err
+					@data.eval path, context, (err, result) =>
+						if err then console.log 'WM', @data.data._id, path, err
 						return next null, obj[key] = context[key] = result or def
 
 				maps = ([key, path] for key, path of map)
