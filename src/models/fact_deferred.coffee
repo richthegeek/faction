@@ -67,8 +67,7 @@ module.exports = class Fact_deferred_Model extends Model
 		callback = args.pop()
 		defer = args.pop() ? true
 
-		@getSettings (err, settings) ->
-			console.log 'IMPORT', err, settings.foreign_keys
+		@getSettings (err, settings) =>
 			@data = {}
 			settings.foreign_keys ?= {}
 			for key, val of data
@@ -76,9 +75,10 @@ module.exports = class Fact_deferred_Model extends Model
 					@data[key] = val
 
 			if defer
-				@defer callback
+				@defer () =>
+					callback err, @data
 			else
-				callback err
+				callback err, @data
 
 	defer: (callback) ->
 		self = @
