@@ -184,8 +184,10 @@ module.exports =
 				updates = merge.updates
 
 				# remove this stuff, it gets in the way.
+				console.log 'yep', 1
 				for key of set.foreign_keys
 					delete updates[key]
+				console.log 'yep', 2
 
 				updates._updated = {type: '$set', value: time}
 				fact._updated = time
