@@ -172,7 +172,6 @@ module.exports =
 			combineMappings = (info, next) ->
 				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
 
-
 				set.time = time
 				merge = mergeFacts set, info.fact.data, info.info
 				# fact is kinda not used, other than getting the ID. Consider removing to get rid of xtend cost.
@@ -184,10 +183,8 @@ module.exports =
 				updates = merge.updates
 
 				# remove this stuff, it gets in the way.
-				console.log 'yep', 1
 				for key of set.foreign_keys
 					delete updates[key]
-				console.log 'yep', 2
 
 				updates._updated = {type: '$set', value: time}
 				fact._updated = time
@@ -218,16 +215,19 @@ module.exports =
 						version: fact._updated
 					}
 
+			console.log '> parse'
 			async.map mappings, parseMappings, (err, result) ->
+				console.log '< parse', err
 				if err
 					return done err
-
 				job.progress 2, 3
 
 				# flatten results into single array
 				result = [].concat.apply([], result).filter Boolean
 
+				console.log '> combine'
 				async.map result, combineMappings, (err, result) ->
+					console.log '< combine'
 					job.progress 3, 3
 
 					# double concat...
