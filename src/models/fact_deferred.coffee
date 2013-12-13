@@ -88,7 +88,9 @@ module.exports = class Fact_deferred_Model extends Model
 				delete @data[key]
 				@data.defer key, (key, data, next) =>
 					props = settings.foreign_keys[key]
-					Fact_deferred_Model.parseObject props.query, {fact: self.data}, (query) ->
+					Fact_deferred_Model.parseObject props.query, {fact: self.data}, (err, query) ->
+						if err
+							return next err
 						new Fact_deferred_Model self.account, props.fact_type, () ->
 							if props.has is 'one' or query._id?
 								@load query, next
