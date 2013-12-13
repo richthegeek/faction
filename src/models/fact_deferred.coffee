@@ -303,6 +303,7 @@ Fact_deferred_Model.parseObject = (obj, context, callback) ->
 	iter = (node, next) =>
 		Fact_deferred_Model.evaluate node.value, context, (err, newval) =>
 			if err
+				console.log 'Eval error', err
 				process.exit 0
 			next err, node.update newval, true
 
