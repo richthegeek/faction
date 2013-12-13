@@ -225,7 +225,7 @@ module.exports =
 						version: fact._updated
 					}
 
-			console.log '> parse'
+			console.log '> parse', mappings
 			async.map mappings, parseMappings, (err, result) ->
 				console.log '< parse', err
 				if err
