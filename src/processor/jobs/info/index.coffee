@@ -114,7 +114,9 @@ module.exports =
 					moment: moment
 					url: (value, key = 'href') -> require('url').parse(value, true)[key]
 
+				console.log '  > evaluate ID'
 				query = _id: evaluate mapping.fact_identifier, context
+				console.log '  < evaluate ID', query
 
 				if mapping.debug
 					console.log 'Query', query
