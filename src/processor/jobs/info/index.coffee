@@ -114,9 +114,7 @@ module.exports =
 					moment: moment
 					url: (value, key = 'href') -> require('url').parse(value, true)[key]
 
-				console.log '  > evaluate ID'
 				query = _id: evaluate mapping.fact_identifier, context
-				console.log '  < evaluate ID', query
 
 				if mapping.debug
 					console.log 'Query', query
@@ -127,11 +125,9 @@ module.exports =
 				mapping.update_only = !! (mapping.update_only ? false)
 				mapping.conditions ?= []
 
-				console.log '   > load'
 				new Fact_deferred_Model account, mapping.fact_type, () ->
 					model = @
 					@load query, true, (err, fact = {}) =>
-						console.log '   < load', err
 						if err
 							return next err
 
@@ -139,45 +135,46 @@ module.exports =
 							console.log 'Skip due to update_only', mapping.fact_type, query
 							return next()
 
-						console.log '   > shim'
 						@addShim (err, fact) =>
 							delete row._type
 							delete row._id if Object::toString.call(row._id) is '[object Object]'
-							console.log '   < shim', err
 
 							# copy fact onto previously defined context
 							context.fact = fact
 
 							evalCond = (cond, next) -> Fact_deferred_Model.evaluate cond, context, next
-							console.log '   > conds'
 							async.map mapping.conditions, evalCond, (err, conds) ->
 								# if an error occured, treat it as a conditions failure
 								conds.push not err
 								pass = conds.every Boolean
-								console.log '   < conds', err, pass
 								if not pass
 									if mapping.debug
 										console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
 									return next()
 
-								console.log '   > parseObject'
-								parseObject mapping.fields, context, (obj) ->
-									console.log '   < parseObject'
-									obj._id = query._id
+								console.log '   > parseObject', mapping.fields
+								try
+									parseObject mapping.fields, context, (obj) ->
+										console.log '   < parseObject'
+										obj._id = query._id
 
-									if mapping.debug
-										console.log 'Mapped', mapping, obj
+										if mapping.debug
+											console.log 'Mapped', mapping, obj
 
-									for key, val of obj when key.indexOf('.') >= 0
-										delete obj[key]
-										setColumn obj, key, val
+										for key, val of obj when key.indexOf('.') >= 0
+											delete obj[key]
+											setColumn obj, key, val
 
-									next null, {
-										model: model
-										fact: fact or {},
-										mapping: mapping,
-										info: obj
-									}
+										next null, {
+											model: model
+											fact: fact or {},
+											mapping: mapping,
+											info: obj
+										}
+								catch e
+									console.log 'PARSE OBJECT ERROR'
+									console.log e
+									throw e
 
 			combineMappings = (info, next) ->
 				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
@@ -225,7 +222,7 @@ module.exports =
 						version: fact._updated
 					}
 
-			console.log '> parse', mappings
+			console.log '> parse'
 			async.map mappings, parseMappings, (err, result) ->
 				console.log '< parse', err
 				if err
