@@ -174,7 +174,7 @@ module.exports =
 
 				# remove this stuff, it gets in the way.
 				for key of set.foreign_keys
-					delete info.fact.data[key]
+					delete info.fact[key]
 
 				set.time = time
 				merge = mergeFacts set, info.fact.data, info.info
