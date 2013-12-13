@@ -63,8 +63,14 @@ module.exports = class Fact_deferred_Model extends Model
 		return @data
 
 	import: (data, callback) ->
-		@data = data or {}
-		@defer callback
+		@getSettings (err, settings) ->
+			@data = {}
+			settings.foreign_keys ?= {}
+			for key, val of data
+				if not settings.foreign_keys[key]?
+					@data[key] = val
+
+			@defer callback
 
 	defer: (callback) ->
 		self = @
