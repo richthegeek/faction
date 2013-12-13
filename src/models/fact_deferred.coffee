@@ -62,7 +62,11 @@ module.exports = class Fact_deferred_Model extends Model
 			return @data.data
 		return @data
 
-	import: (data, callback) ->
+	import: (data, defer, callback) ->
+		args = Array::slice.call arguments, 1
+		callback = args.pop()
+		defer = args.pop() ? true
+
 		@getSettings (err, settings) ->
 			console.log 'IMPORT', err, settings.foreign_keys
 			@data = {}
@@ -71,7 +75,10 @@ module.exports = class Fact_deferred_Model extends Model
 				if not settings.foreign_keys[key]?
 					@data[key] = val
 
-			@defer callback
+			if defer
+				@defer callback
+			else
+				callback err
 
 	defer: (callback) ->
 		self = @
@@ -98,15 +105,10 @@ module.exports = class Fact_deferred_Model extends Model
 			query = {_id: query}
 
 		@table.findOne query, (err, row) =>
-			@data = row or {}
 			if err or not row
 				return callback err, row
-
-			if defer
-				return @defer () =>
-					callback.call @, err, @data, query
-
-			callback.call @, err, @data, query
+			@import row, defer, () =>
+				callback.call @, err, @data, query
 
 	loadAll: (query, defer, callback) ->
 		args = Array::slice.call(arguments, 1)
