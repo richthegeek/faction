@@ -220,7 +220,10 @@ Fact_Model.parseObject = (obj, context, callback) ->
 			nodes.push @
 
 	iter = (node, next) =>
-		Fact_Model.evaluate node.value, context, (err, newval) =>
-			next err, node.update newval, true
+		Fact_deferred_Model.evaluate node.value, context, (err, newval) =>
+			if err
+				next err, null
+			else
+				next null, node.update newval, true
 
-	async.each nodes, iter, () -> callback obj
+	async.each nodes, iter, callback

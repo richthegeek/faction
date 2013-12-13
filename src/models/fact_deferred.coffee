@@ -300,11 +300,15 @@ Fact_deferred_Model.parseObject = (obj, context, callback) ->
 			@value = val
 			nodes.push @
 
+	errors = []
 	iter = (node, next) =>
 		Fact_deferred_Model.evaluate node.value, context, (err, newval) =>
 			if err
-				console.log 'Eval error', err
-				process.exit 0
-			next err, node.update newval, true
+				errors.push err
+			else
+				node.update newval, true
+			next()
 
-	async.each nodes, iter, () -> callback obj
+	async.each nodes, iter, () ->
+		err = (if errors.length then errors else null)
+		callback err, obj

@@ -153,28 +153,23 @@ module.exports =
 									return next()
 
 								console.log '   > parseObject', mapping.fields
-								try
-									parseObject mapping.fields, context, (obj) ->
-										console.log '   < parseObject'
-										obj._id = query._id
+								parseObject mapping.fields, context, (err, obj) ->
+									console.log '   < parseObject', err
+									obj._id = query._id
 
-										if mapping.debug
-											console.log 'Mapped', mapping, obj
+									if mapping.debug
+										console.log 'Mapped', mapping, obj
 
-										for key, val of obj when key.indexOf('.') >= 0
-											delete obj[key]
-											setColumn obj, key, val
+									for key, val of obj when key.indexOf('.') >= 0
+										delete obj[key]
+										setColumn obj, key, val
 
-										next null, {
-											model: model
-											fact: fact or {},
-											mapping: mapping,
-											info: obj
-										}
-								catch e
-									console.log 'PARSE OBJECT ERROR'
-									console.log e
-									throw e
+									next null, {
+										model: model
+										fact: fact or {},
+										mapping: mapping,
+										info: obj
+									}
 
 			combineMappings = (info, next) ->
 				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}

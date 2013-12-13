@@ -5,7 +5,9 @@ module.exports = (fk, fact, next) ->
 
 	# find in the collection using this query
 	try
-		parseObject fk.query, {fact: fact}, (query) =>
+		parseObject fk.query, {fact: fact}, (err, query) =>
+			if err
+				return next err
 			# verify its not an empty query...
 			size = 0
 			for k, v of query when v?
