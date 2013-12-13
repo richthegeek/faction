@@ -125,9 +125,11 @@ module.exports =
 				mapping.update_only = !! (mapping.update_only ? false)
 				mapping.conditions ?= []
 
+				console.log '   > load'
 				new Fact_deferred_Model account, mapping.fact_type, () ->
 					model = @
 					@load query, true, (err, fact = {}) =>
+						console.log '   < load', err
 						if err
 							return next err
 
@@ -135,24 +137,30 @@ module.exports =
 							console.log 'Skip due to update_only', mapping.fact_type, query
 							return next()
 
+						console.log '   > shim'
 						@addShim (err, fact) =>
 							delete row._type
 							delete row._id if Object::toString.call(row._id) is '[object Object]'
+							console.log '   < shim', err
 
 							# copy fact onto previously defined context
 							context.fact = fact
 
 							evalCond = (cond, next) -> Fact_deferred_Model.evaluate cond, context, next
+							console.log '   > conds'
 							async.map mapping.conditions, evalCond, (err, conds) ->
 								# if an error occured, treat it as a conditions failure
 								conds.push not err
 								pass = conds.every Boolean
+								console.log '   < conds', err, pass
 								if not pass
 									if mapping.debug
 										console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
 									return next()
 
+								console.log '   > parseObject'
 								parseObject mapping.fields, context, (obj) ->
+									console.log '   < parseObject'
 									obj._id = query._id
 
 									if mapping.debug
