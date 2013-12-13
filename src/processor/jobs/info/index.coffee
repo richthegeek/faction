@@ -172,9 +172,6 @@ module.exports =
 			combineMappings = (info, next) ->
 				set = (s for s in settings when s._id is info.model.type).pop() or {foreign_keys: {}}
 
-				# remove this stuff, it gets in the way.
-				for key of set.foreign_keys
-					delete info.fact[key]
 
 				set.time = time
 				merge = mergeFacts set, info.fact.data, info.info
@@ -185,6 +182,10 @@ module.exports =
 				# to avoid conflicts, it comes in as a map of "field name" to action.
 				# Conflicts can still occur if two things affect the same field with different names (foo[0] and foo.0, for example)
 				updates = merge.updates
+
+				# remove this stuff, it gets in the way.
+				for key of set.foreign_keys
+					delete updates[key]
 
 				updates._updated = {type: '$set', value: time}
 				fact._updated = time
