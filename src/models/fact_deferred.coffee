@@ -64,6 +64,7 @@ module.exports = class Fact_deferred_Model extends Model
 
 	import: (data, callback) ->
 		@getSettings (err, settings) ->
+			console.log 'IMPORT', err, settings.foreign_keys
 			@data = {}
 			settings.foreign_keys ?= {}
 			for key, val of data
