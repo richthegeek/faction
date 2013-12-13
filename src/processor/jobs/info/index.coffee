@@ -152,9 +152,7 @@ module.exports =
 										console.log 'Skip due to condition failure', "\n\t" + mapping.conditions.map((v, i) -> [v, !! conds[i]].join ' ').join("\n\t")
 									return next()
 
-								console.log '   > parseObject', mapping.fields
 								parseObject mapping.fields, context, (err, obj) ->
-									console.log '   < parseObject', err
 									obj._id = query._id
 
 									if mapping.debug
@@ -217,9 +215,7 @@ module.exports =
 						version: fact._updated
 					}
 
-			console.log '> parse'
 			async.map mappings, parseMappings, (err, result) ->
-				console.log '< parse', err
 				if err
 					return done err
 				job.progress 2, 3
@@ -227,9 +223,7 @@ module.exports =
 				# flatten results into single array
 				result = [].concat.apply([], result).filter Boolean
 
-				console.log '> combine'
 				async.map result, combineMappings, (err, result) ->
-					console.log '< combine'
 					job.progress 3, 3
 
 					# double concat...
