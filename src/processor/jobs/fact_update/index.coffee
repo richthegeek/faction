@@ -7,7 +7,7 @@ moment = require 'moment'
 
 module.exports =
 
-	disabled: true
+	disabled: false
 	concurrency: 1
 	timeout: 10000
 
