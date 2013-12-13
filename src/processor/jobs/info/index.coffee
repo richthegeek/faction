@@ -174,12 +174,7 @@ module.exports =
 
 				# remove this stuff, it gets in the way.
 				for key of set.foreign_keys
-					try
-						info.fact.data.del key
-						console.log 'DEL WORKS'
-					catch
-						delete info.fact.data[key]
-						delete info.fact[key]
+					delete info.fact.data[key]
 
 				set.time = time
 				merge = mergeFacts set, info.fact.data, info.info
