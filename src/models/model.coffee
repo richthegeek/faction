@@ -41,8 +41,8 @@ module.exports = class Model
 
 	loadPaginated: (conditions, req, callback) ->
 		# get numerical params from the req.
-		req.query.page = Number req.query.page ? 0
-		req.query.limit = Number req.query.limit ? 100
+		req.query.page = Number req.query.page ? req.body.page ? 0
+		req.query.limit = Number req.query.limit ? req.body.limit ? 100
 
 		if isNaN(req.query.page) or req.query.page < 0
 			return callback 'The page query parameter must be numeric and greater than 0'

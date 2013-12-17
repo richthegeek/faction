@@ -125,6 +125,19 @@ module.exports = class Fact_deferred_Model extends Model
 			async.map ids, loader, (err, rows) ->
 				callback.call @, err, wrapArray rows
 
+	loadPaginated: (conditions, req, callback) ->
+		super conditions, req, (err, response) ->
+			if err
+				return callback err, response
+
+			loader = (item, next) ->
+				# apply withMap to each item.
+				item.withMap req.body.with, req.body.map, next
+
+			async.map response.items, loader, (err, items) ->
+				response.items = items
+				callback err, response
+
 	addShim: (callback) ->
 		file = require('path').resolve __dirname, '../processor/jobs/info/add_shim'
 		addShim = require file

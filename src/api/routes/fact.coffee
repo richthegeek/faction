@@ -1,6 +1,9 @@
 async = require 'async'
 module.exports = (server) ->
 
+	# temporary override
+	Fact_Model = Fact_deferred_Model
+
 	# list all known fact types
 	server.get '/facts', (req, res, next) ->
 		Fact_Model.getTypes req.account, ErrorHandler next, (err, types) ->
@@ -8,7 +11,7 @@ module.exports = (server) ->
 				res.send info
 
 	# retrieve all facts of this type, paginated.
-	server.get '/facts/:fact-type', Fact_deferred_Model.route, (req, res, next) ->
+	server.get '/facts/:fact-type', Fact_Model.route, (req, res, next) ->
 		req.body ?= {}
 		req.body.query ?= {}
 		req.body.map ?= {}
@@ -38,7 +41,7 @@ module.exports = (server) ->
 			res.send @export()
 
 	# retrieve a specific fact by ID
-	server.get '/facts/:fact-type/fact_def/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
+	server.get '/facts/:fact-type/fact_def/:fact-id', Fact_Model.route, (req, res, next) ->
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
 			if err or not found
 				return res.notFound 'fact'
@@ -75,7 +78,7 @@ module.exports = (server) ->
 			}
 
 	# mark a fact as updated...
-	server.post '/facts/:fact-type/update/:fact-id', Fact_deferred_Model.route, (req, res, next) ->
+	server.post '/facts/:fact-type/update/:fact-id', Fact_Model.route, (req, res, next) ->
 		req.model.load {_id: req.params['fact-id']}, true, ErrorHandler next, (err, found) ->
 			console.log 'update', err, found
 
@@ -87,7 +90,7 @@ module.exports = (server) ->
 					fact: @export()
 				}
 
-	server.post '/facts/:fact-type/update', Fact_deferred_Model.route, (req, res, next) ->
+	server.post '/facts/:fact-type/update', Fact_Model.route, (req, res, next) ->
 		req.model.markUpdatedFull ErrorHandler next, (err, ids) ->
 			console.log 'updated', err, ids
 			next res.send {
