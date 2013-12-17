@@ -17,6 +17,13 @@ module.exports =
 		time = new Date parseInt job.created_at
 		row = job.data.data
 
+		if typeof accountID isnt 'string'
+			if accountID._id
+				accountID = accountID._id
+			else
+				console.log accountID
+				return done 'BAD ACCOUNT ID'
+
 		debugMode = false
 		debug = () ->
 			if debugMode
@@ -83,12 +90,8 @@ module.exports =
 			hooks      = results.hooks.filter filter
 			conditions = results.conditions.filter filter
 			actions    = results.actions.filter filter
-			settings   = results.settings.filter((setting) -> setting._id is row.fact_type).pop() or {}
-
-			settings.field_modes ?= {}
-			settings.foreign_keys ?= {}
-
-			fact = results.fact
+			settings   = results.settings.filter((setting) -> setting._id is row.fact_type).pop()
+			fact       = results.fact
 
 			if err
 				if err is 'Invalid version'
@@ -97,6 +100,12 @@ module.exports =
 
 			if not fact?.data?
 				return done 'Invalid fact'
+
+			if not settings and conditions.length is 0
+				return done 'No settings or conditions for this type'
+
+			settings.field_modes ?= {}
+			settings.foreign_keys ?= {}
 
 			context =
 				http: http
