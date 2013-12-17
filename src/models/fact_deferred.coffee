@@ -50,7 +50,8 @@ module.exports = class Fact_deferred_Model extends Model
 		if typeof query is 'function'
 			callback = query
 			query = {}
-		@table.find(query).count (err, count) ->
+
+		@table.find(query).count (err, count) =>
 			jobs.create('fact_update_all', {
 				title: @type,
 				account: @account.data._id,
