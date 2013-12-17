@@ -46,11 +46,15 @@ module.exports = class Fact_deferred_Model extends Model
 		else
 			callback()
 
-	markUpdatedFull: (callback) ->
+	markUpdatedFull: (query, callback) ->
+		if typeof query is 'function'
+			callback = query
+			query = {}
 		jobs.create('fact_update_all', {
 			title: @type,
 			account: @account.data._id,
 			data: {
+				query: query,
 				fact_type: @type,
 				version: null
 			}
