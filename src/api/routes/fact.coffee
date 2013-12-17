@@ -95,6 +95,5 @@ module.exports = (server) ->
 			console.log 'updated', err, ids
 			next res.send {
 				status: "ok",
-				statusText: "All facts of this type have been marked as updated.",
-				facts: ids
+				statusText: "All facts of this type have been marked as updated."
 			}

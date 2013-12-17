@@ -47,15 +47,15 @@ module.exports = class Fact_deferred_Model extends Model
 			callback()
 
 	markUpdatedFull: (callback) ->
-		type = @type
-		collection = @db.collection('fact_updates')
-		# get all ids
-		account = @account.data._id
-		@table.aggregate {$group: {_id: null, ids: $push: '$_id'}}, (err, result) ->
-			ids = result[0].ids
-			insert = (id, next) =>
-				Fact_deferred_Model.markUpdated id, type, account, next
-			async.map ids, insert, callback
+		jobs.create('fact_update_all', {
+			title: @type,
+			account: @account.data._id,
+			data: {
+				fact_type: type,
+				version: null
+			}
+		}).save (err) -> callback err
+
 
 	export: ->
 		if @data.data
