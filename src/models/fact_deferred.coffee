@@ -51,7 +51,7 @@ module.exports = class Fact_deferred_Model extends Model
 			title: @type,
 			account: @account.data._id,
 			data: {
-				fact_type: type,
+				fact_type: @type,
 				version: null
 			}
 		}).save (err) -> callback err

@@ -22,4 +22,4 @@ module.exports =
 						Fact_deferred_Model.markUpdated id, type, account, next
 
 					console.log 'Fact_update_all creating ' + ids.length + ' jobs'
-					async.map ids, insert, done
+					async.forEach ids, insert, done
