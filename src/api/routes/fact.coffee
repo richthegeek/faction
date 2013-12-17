@@ -91,9 +91,9 @@ module.exports = (server) ->
 				}
 
 	server.post '/facts/:fact-type/update', Fact_Model.route, (req, res, next) ->
-		req.model.markUpdatedFull ErrorHandler next, (err, ids) ->
+		req.model.markUpdatedFull ErrorHandler next, (err, count) ->
 			console.log 'updated', err, ids
 			next res.send {
 				status: "ok",
-				statusText: "All facts of this type have been marked as updated."
+				statusText: "#{count} facts of this type have been marked as updated."
 			}
