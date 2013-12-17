@@ -32,7 +32,7 @@ module.exports = class Fact_deferred_Model extends Model
 	@markUpdated = (id, type, account, callback) ->
 		jobs.create('fact_update', {
 			title: "#{type} - #{id}"
-			account: account,
+			account: (account._id or account),
 			data: {
 				fact_id: id,
 				fact_type: type,
