@@ -18,10 +18,12 @@ module.exports =
 
 			new Fact_deferred_Model account, type, (err) ->
 				@table.aggregate [{$match: query}, {$group: {_id: null, ids: $push: '$_id'}}], (err, result) ->
-					ids = result[0].ids
-					insert = (id, next) =>
-						Fact_deferred_Model.markUpdated id, type, accountID, next
+					try
+						ids = result[0].ids
+						insert = (id, next) =>
+							Fact_deferred_Model.markUpdated id, type, accountID, next
 
-					console.log 'Fact_update_all creating ' + ids.length + ' jobs'
-					async.forEach ids, insert, done
-					# done()
+						console.log 'Fact_update_all creating ' + ids.length + ' jobs'
+						async.forEach ids, insert, done
+					catch e
+						done e
