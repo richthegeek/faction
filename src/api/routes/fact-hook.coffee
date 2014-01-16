@@ -1,7 +1,6 @@
 module.exports = (server) ->
 	# list all fact hooks for this fact-type
 	server.get '/facts/:fact-type/hooks', Hook_Model.route, (req, res, next) ->
-		console.log req.params.asQuery()
 		req.model.loadPaginated req.params.asQuery(), req, ErrorHandler next, (err, response) ->
 			res.send response
 

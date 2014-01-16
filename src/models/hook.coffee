@@ -32,13 +32,16 @@ module.exports = class Hook_Model extends Model
 		super
 
 	export: () ->
-		return {
+		ret = {
 			hook_id: @data.hook_id,
 			fact_type: @data.fact_type,
 			url: @data.url,
 			type: @data.type or 'url',
 			options: @data.options
 		}
+		ret.with = @data.with if @data.with?
+		ret.map = @data.map if @data.map?
+		return ret
 
 	setup: ->
 		cb = () -> null

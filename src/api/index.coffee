@@ -74,15 +74,30 @@ server.use restify.fullResponse()
 
 # time logging
 server.use (req, res, next) ->
+	req.canary = true
+	req.tempID = (Math.round Math.random() * 99999).toString()
 	req.logTime = req.logTime = (args...) ->
-		args.unshift (+new Date) - req.time()
-		console.log.apply console.log, args
+		if req.canary
+			args.unshift (Date.now() - req.time()) + 'ms'
+			args.unshift req.tempID
+			console.log.apply console.log, args
 	next()
+
+logTime = (name) -> (req, res, next) ->
+	req.logTime name
+	next()
+
+server.use logTime 'start'
 
 # parse the query string and JSON-body automatically
 server.use restify.queryParser()
+server.use logTime 'queryParser'
+
 server.use (req, res, next) -> next null, req.headers['content-type'] = 'application/json'
+server.use logTime 'force JSON'
+
 server.use restify.bodyParser mapParams: false, requestBodyOnGet: true
+server.use logTime 'bodyParser'
 
 # use req.body in GET methods
 server.use (req, res, next) ->
@@ -91,6 +106,7 @@ server.use (req, res, next) ->
 		if typeof req.body is 'string'
 			req.body = JSON.parse req.body
 	next()
+server.use logTime 'force body on GET'
 
 server.use (req, res, next) ->
 	res.notFound = (noun) -> @send 404, status: 'error', statusText: "There was no #{noun} found matching those parameters"
@@ -108,7 +124,7 @@ server.use (req, res, next) ->
 		return ret
 
 	next()
-
+server.use logTime 'helpers'
 
 # load models and routes automatically.
 fs = require 'fs'
@@ -123,6 +139,8 @@ global.Routes = files.routes
 
 for name, fn of Auth
 	server.use Auth[name]
+
+server.use logTime 'auth'
 
 # parse date-likes in body
 # this happens AFTER auth, to resolve any issues with hash matching
@@ -143,10 +161,11 @@ server.use (req, res, next) ->
 
 	recurse req.body
 	next()
-
+server.use logTime 'parse dates'
 
 for group, fn of Routes
 	fn server
+server.use logTime 'routes'
 
 # listen on the configured port.
 console.log 'Listening on', config.api.port

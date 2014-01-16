@@ -5,6 +5,33 @@ Cache = require 'shared-cache'
 evaluator = require './eval'
 moment = require 'moment'
 
+loadFactCache = {}
+hasher = () -> return Array::join.call(arguments, '=-_,_-=')
+
+loadFactBase = (account) -> (type, id) ->
+	hash = hasher account, type, id
+	if loadFactCache[hash]?
+		result = loadFactCache[hash]
+		if result.time < (new Date().getTime() - 5000)
+			delete loadFactCache[hash]
+		else
+			return result.data
+
+	defer = q.defer()
+	new Fact_deferred_Model account, type, ->
+		@load {_id: id}, (err, fact) ->
+
+			loadFactCache[hash] =
+				data: fact
+				time: new Date().getTime()
+
+			if err or not fact
+				return defer.reject err or 'Not Found'
+
+			defer.resolve fact
+
+	return defer.promise
+
 module.exports =
 
 	disabled: false
@@ -114,14 +141,7 @@ module.exports =
 				fact: fact.data
 				debug: debug
 				url: (value, key = 'href') -> require('url').parse(value, true)[key]
-				load: (type, id) ->
-					defer = q.defer()
-					new Fact_deferred_Model account, type, () ->
-						@load {_id: id}, (err, found) ->
-							if err or not found
-								return defer.reject err or 'Not found'
-							defer.resolve @data
-					return defer.promise
+				load: loadFactBase(account)
 
 			# evaluate fact data...
 			evals = ({key: key, settings: props} for key, props of settings.field_modes when props.eval)
