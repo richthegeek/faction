@@ -10,7 +10,7 @@
     "contextify": "*",
     "moment": "*",
     "shared-cache": "*",
-    "deferred-object": "*",
+    "deferred-object": ">=1.2.0",
 
     "xtend": "*",
     "q": "*",

@@ -192,7 +192,8 @@ module.exports = class Fact_deferred_Model extends Model
 
 		get = (part, next) =>
 			start = +new Date
-			@data.eval "this.#{part}", context, (err, result) ->
+			part = "this." + part.replace /^(this|fact)\./, ''
+			@data.eval part, context, (err, result) ->
 				next err, result
 
 		async.map _with, get, () =>
