@@ -15,8 +15,10 @@ loadFactBase = (account) -> (type, id) ->
 		if result.time < (new Date().getTime() - 5000)
 			delete loadFactCache[hash]
 		else
+			console.log 'cache hit'
 			return result.data
 
+	console.log 'cache miss'
 	defer = q.defer()
 	new Fact_deferred_Model account, type, ->
 		@load {_id: id}, (err, fact) ->
